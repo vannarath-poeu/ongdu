@@ -6,7 +6,7 @@ import { createEmptyArrangement, isArrangementComplete, validateArrangement, eva
 import Card from './Card';
 
 interface HandArrangementProps {
-  hand: Card[];
+  hand: CardType[];
   onConfirm: (arrangement: PlayerArrangement) => void;
   onArrangementChange?: (arrangement: PlayerArrangement) => void;
 }
