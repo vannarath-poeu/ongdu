@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ongdu - Chinese Poker Card Game
 
-## Getting Started
+A strategic 3-layer card game based on Chinese Poker, built with Next.js 16 and React.
 
-First, run the development server:
+![Ongdu Game](https://img.shields.io/badge/Status-Complete-brightgreen)
+
+## 🎮 Game Overview
+
+Ongdu is a 2-6 player card game where you arrange 9 cards into 3 layers of 3 cards each. The goal is to beat other players by having stronger hands in each layer.
+
+### Key Rules
+
+- **55 Card Deck**: Standard 52 cards + 3 Wildcards (Jokers)
+- **Layer Requirement**: Bottom must be strongest, top must be weakest
+- **Scoring**: 1 point per layer won, $1 per point
+- **Game End**: When any player goes bankrupt
+
+## 🃏 Hand Rankings (Strongest to Weakest)
+
+1. **Three of a Kind (Pure)** - No wildcards
+2. **Straight Flush J-Q-K** - Same suit
+3. **Straight J-Q-K** - Any suits
+4. **Three of a Kind (Wild)** - With wildcards
+5. **Three Face Cards** - Any J, Q, K combination
+6. **Sum Modulo 10** - Best is 0 (counts as 10)
+
+## 🚀 Getting Started
 
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to play!
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🎯 How to Play
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Lobby**: Choose number of players (2-6), enter your name, and set starting cash
+2. **Deal**: Each player receives 9 cards (10 for starting player in 6-player games)
+3. **Arrange**: Click cards to select, then click slots to place them
+4. **Reveal**: All arrangements are revealed simultaneously
+5. **Score**: Points are calculated and cash is exchanged
+6. **Repeat**: Until someone goes bankrupt
 
-## Learn More
+## 🏗️ Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework**: Next.js 16.1.1
+- **UI**: React 19 + Tailwind CSS 4
+- **Language**: TypeScript
+- **Fonts**: Outfit, JetBrains Mono
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📁 Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+ongdu/
+├── app/
+│   ├── globals.css     # Global styles and animations
+│   ├── layout.tsx      # Root layout with fonts
+│   └── page.tsx        # Main game logic and state
+├── components/
+│   ├── Card.tsx        # Playing card component
+│   ├── GameLobby.tsx   # Initial game setup screen
+│   ├── GameTable.tsx   # Main game view
+│   ├── HandArrangement.tsx  # Card placement interface
+│   └── ScoreDisplay.tsx     # Round/game results
+├── lib/
+│   ├── types.ts        # TypeScript interfaces
+│   ├── game-logic.ts   # Core game mechanics
+│   └── ai.ts           # AI opponent logic
+└── spec/
+    └── ongdu.md        # Game specification
+```
 
-## Deploy on Vercel
+## 🤖 AI Opponents
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The AI uses a brute-force algorithm to find the optimal card arrangement:
+- Evaluates all possible 3-card groupings (1680 combinations)
+- Validates layer ordering constraints
+- Selects arrangement with highest combined score
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ⚡ Features
+
+- ✅ Full game implementation per specification
+- ✅ 2-6 player support (1 human vs AI opponents)
+- ✅ Beautiful dark theme with glassmorphism effects
+- ✅ Smooth animations and transitions
+- ✅ Responsive card selection and placement
+- ✅ Real-time arrangement validation
+- ✅ Comprehensive scoring display
+- ✅ Cryptographically secure card shuffling
+
+## 📜 License
+
+MIT
