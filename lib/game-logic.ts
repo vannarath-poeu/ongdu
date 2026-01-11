@@ -618,3 +618,97 @@ export function shouldGameEnd(players: Player[]): boolean {
   return players.some(p => p.isBankrupt);
 }
 
+// Generate all combinations of choosing k elements from an array
+function combinations<T>(arr: T[], k: number): T[][] {
+  if (k === 0) return [[]];
+  if (arr.length < k) return [];
+  
+  const result: T[][] = [];
+  const [first, ...rest] = arr;
+  
+  // Combinations that include the first element
+  for (const combo of combinations(rest, k - 1)) {
+    result.push([first, ...combo]);
+  }
+  
+  // Combinations that exclude the first element
+  for (const combo of combinations(rest, k)) {
+    result.push(combo);
+  }
+  
+  return result;
+}
+
+// Score an arrangement for optimization (higher is better)
+function scoreArrangement(arrangement: PlayerArrangement): number {
+  const topCards = arrangement.top.cards.filter(c => c !== null) as Card[];
+  const middleCards = arrangement.middle.cards.filter(c => c !== null) as Card[];
+  const bottomCards = arrangement.bottom.cards.filter(c => c !== null) as Card[];
+  
+  const topEval = evaluateHand(topCards);
+  const middleEval = evaluateHand(middleCards);
+  const bottomEval = evaluateHand(bottomCards);
+  
+  // Convert hand type to score (lower type = higher score since HandType enum has better hands with lower values)
+  const typeScore = (type: HandType): number => {
+    return (7 - type) * 100; // HandType ranges from 1-6, so this gives 600-100
+  };
+  
+  // Combined score: prioritize overall hand strength
+  // Weight layers equally but use value for tiebreakers within same type
+  const topScore = typeScore(topEval.type) + topEval.value;
+  const middleScore = typeScore(middleEval.type) + middleEval.value;
+  const bottomScore = typeScore(bottomEval.type) + bottomEval.value;
+  
+  return topScore + middleScore + bottomScore;
+}
+
+// Find the optimal arrangement for a hand of 9 cards
+export function findBestArrangement(hand: Card[]): PlayerArrangement | null {
+  if (hand.length !== 9) return null;
+  
+  let bestArrangement: PlayerArrangement | null = null;
+  let bestScore = -Infinity;
+  
+  // Get all ways to choose 3 cards for the first group
+  const firstGroupCombos = combinations(hand, 3);
+  
+  for (const group1 of firstGroupCombos) {
+    // Remaining cards after choosing first group
+    const remaining1 = hand.filter(c => !group1.includes(c));
+    
+    // Get all ways to choose 3 cards for the second group
+    const secondGroupCombos = combinations(remaining1, 3);
+    
+    for (const group2 of secondGroupCombos) {
+      // Third group is the remaining cards
+      const group3 = remaining1.filter(c => !group2.includes(c));
+      
+      // Try all 6 permutations of assigning groups to layers
+      const groups = [group1, group2, group3];
+      const permutations = [
+        [0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]
+      ];
+      
+      for (const perm of permutations) {
+        const arrangement: PlayerArrangement = {
+          top: { cards: [...groups[perm[0]]] },
+          middle: { cards: [...groups[perm[1]]] },
+          bottom: { cards: [...groups[perm[2]]] },
+        };
+        
+        // Check if this arrangement is valid
+        if (validateArrangement(arrangement)) {
+          const score = scoreArrangement(arrangement);
+          
+          if (score > bestScore) {
+            bestScore = score;
+            bestArrangement = arrangement;
+          }
+        }
+      }
+    }
+  }
+  
+  return bestArrangement;
+}
