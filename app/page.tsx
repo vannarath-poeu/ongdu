@@ -66,18 +66,18 @@ export default function Home() {
       });
     }
     
-    // Create and deal cards
+    // Randomly select starting player BEFORE dealing (affects who gets 10 cards in 6-player)
+    const startingPlayerIndex = Math.floor(Math.random() * playerCount);
+    
+    // Create and deal cards (starting player gets 10 cards in 6-player game)
     const deck = createDeck();
-    const { hands, remainingDeck } = dealCards(deck, playerCount);
+    const { hands, remainingDeck } = dealCards(deck, playerCount, startingPlayerIndex);
     
     // Assign hands to players
     const playersWithHands = players.map((player, idx) => ({
       ...player,
       hand: hands[idx],
     }));
-    
-    // Randomly select starting player
-    const startingPlayerIndex = Math.floor(Math.random() * playerCount);
     
     setGameState({
       phase: playerCount === 6 ? 'discard' : 'arrangement',
@@ -113,6 +113,22 @@ export default function Home() {
       };
     });
   }, []);
+
+  // Handle AI discard in 6-player game when starting player is AI
+  useEffect(() => {
+    if (gameState.phase !== 'discard') return;
+    
+    const startingPlayer = gameState.players[gameState.startingPlayerIndex];
+    if (!startingPlayer || startingPlayer.isHuman) return;
+    
+    // AI needs to discard
+    const timer = setTimeout(() => {
+      const cardToDiscard = chooseCardToDiscard(startingPlayer.hand);
+      handleDiscard(cardToDiscard);
+    }, getAIDelay());
+    
+    return () => clearTimeout(timer);
+  }, [gameState.phase, gameState.players, gameState.startingPlayerIndex, handleDiscard]);
 
   // Handle player arrangement confirmation
   const handleArrangementConfirm = useCallback((arrangement: PlayerArrangement) => {
@@ -220,12 +236,13 @@ export default function Home() {
     }
     
     // Start next round
-    const deck = createDeck();
     const playerCount = gameState.players.length;
-    const { hands, remainingDeck } = dealCards(deck, playerCount);
     
-    // Rotate starting player anti-clockwise
+    // Rotate starting player anti-clockwise BEFORE dealing (affects who gets 10 cards)
     const newStartingPlayerIndex = (gameState.startingPlayerIndex + playerCount - 1) % playerCount;
+    
+    const deck = createDeck();
+    const { hands, remainingDeck } = dealCards(deck, playerCount, newStartingPlayerIndex);
     
     // Reset players for new round
     const resetPlayers = gameState.players.map((player, idx) => ({
@@ -287,6 +304,8 @@ export default function Home() {
       currentRound={gameState.currentRound}
       startingPlayerIndex={gameState.startingPlayerIndex}
       onArrangementConfirm={handleArrangementConfirm}
+      onDiscard={handleDiscard}
+      onQuit={handleGameOver}
       waitingForAI={waitingForAI}
     />
   );

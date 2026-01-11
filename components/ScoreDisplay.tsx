@@ -1,7 +1,7 @@
 'use client';
 
 import { Player, RoundScore, PlayerArrangement } from '@/lib/types';
-import { evaluateHand, checkAutoWin, validateArrangement } from '@/lib/game-logic';
+import { evaluateHand, hasSpecialHand, checkAllNines, checkFourOfAKind, validateArrangement } from '@/lib/game-logic';
 import Card from './Card';
 
 interface ScoreDisplayProps {
@@ -15,12 +15,23 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
   // Sort players by score change (winners first)
   const sortedScores = [...roundScores].sort((a, b) => b.cashChange - a.cashChange);
 
-  // Check if a player has automatic win or foul
-  const getPlayerStatus = (player: Player): { isAutoWin: boolean; isFoul: boolean } => {
-    if (!player.arrangement) return { isAutoWin: false, isFoul: true };
+  // Check if a player has special hand or foul
+  const getPlayerStatus = (player: Player): { isSpecialHand: boolean; specialHandType: string | null; isFoul: boolean } => {
+    if (!player.arrangement) return { isSpecialHand: false, specialHandType: null, isFoul: true };
     const isFoul = !validateArrangement(player.arrangement);
-    const isAutoWin = !isFoul && checkAutoWin(player);
-    return { isAutoWin, isFoul };
+    if (isFoul) return { isSpecialHand: false, specialHandType: null, isFoul: true };
+    
+    const isAllNines = checkAllNines(player);
+    const isFourOfAKind = checkFourOfAKind(player);
+    
+    if (isAllNines) {
+      return { isSpecialHand: true, specialHandType: 'All Nines', isFoul: false };
+    }
+    if (isFourOfAKind) {
+      return { isSpecialHand: true, specialHandType: 'Four of a Kind', isFoul: false };
+    }
+    
+    return { isSpecialHand: false, specialHandType: null, isFoul: false };
   };
 
   const renderArrangement = (arrangement: PlayerArrangement | null, playerName: string) => {
@@ -89,14 +100,14 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
 
             const isWinner = idx === 0 && score.cashChange > 0;
             const isLoser = score.cashChange < 0;
-            const { isAutoWin, isFoul } = getPlayerStatus(player);
+            const { isSpecialHand, specialHandType, isFoul } = getPlayerStatus(player);
 
             return (
               <div
                 key={score.playerId}
                 className={`
                   rounded-xl p-5 border transition-all
-                  ${isAutoWin
+                  ${isSpecialHand
                     ? 'bg-gradient-to-r from-emerald-900/40 to-teal-900/30 border-emerald-500/50 ring-2 ring-emerald-500/30'
                     : isWinner 
                       ? 'bg-gradient-to-r from-amber-900/30 to-yellow-900/20 border-amber-600/30' 
@@ -111,7 +122,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
                   <div className="flex items-center gap-4">
                     <div className={`
                       w-12 h-12 rounded-full flex items-center justify-center text-2xl
-                      ${isAutoWin
+                      ${isSpecialHand
                         ? 'bg-emerald-500/30 text-emerald-300'
                         : isWinner 
                           ? 'bg-amber-500/20 text-amber-400' 
@@ -120,7 +131,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
                             : 'bg-slate-700/50 text-slate-400'
                       }
                     `}>
-                      {isAutoWin ? '🏆' : isWinner ? '👑' : isFoul ? '❌' : player.isHuman ? '👤' : '🤖'}
+                      {isSpecialHand ? '🏆' : isWinner ? '👑' : isFoul ? '❌' : player.isHuman ? '👤' : '🤖'}
                     </div>
                     <div>
                       <h3 className={`font-bold text-lg ${player.isHuman ? 'text-amber-400' : 'text-slate-200'}`}>
@@ -131,8 +142,8 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
                         <span className="text-slate-400">
                           Cash: <span className="text-emerald-400 font-mono">${player.cash.toLocaleString()}</span>
                         </span>
-                        {isAutoWin && (
-                          <span className="text-emerald-400 font-bold animate-pulse">✨ ALL NINES - AUTO WIN!</span>
+                        {isSpecialHand && (
+                          <span className="text-emerald-400 font-bold animate-pulse">✨ {specialHandType?.toUpperCase()} - SPECIAL HAND!</span>
                         )}
                         {isFoul && (
                           <span className="text-rose-400 font-medium">FOUL</span>

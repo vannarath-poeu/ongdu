@@ -72,6 +72,7 @@ export interface HandEvaluation {
   type: HandType;
   value: number;              // For tiebreakers (rank value or sum)
   description: string;
+  isSameSuit?: boolean;       // For sum modulo: true if all cards same suit (scores 3 instead of 1)
 }
 
 export interface LayerComparison {

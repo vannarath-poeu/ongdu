@@ -61,15 +61,24 @@ export function shuffleDeck(deck: Card[]): Card[] {
 }
 
 // Deal cards to players
-export function dealCards(deck: Card[], numPlayers: number): { hands: Card[][]; remainingDeck: Card[] } {
+// In 6-player games, startingPlayerIndex receives 10 cards (must discard 1)
+export function dealCards(deck: Card[], numPlayers: number, startingPlayerIndex: number = 0): { hands: Card[][]; remainingDeck: Card[] } {
   const shuffled = shuffleDeck(deck);
   const hands: Card[][] = [];
-  const cardsPerPlayer = numPlayers === 6 ? [10, 9, 9, 9, 9, 9] : Array(numPlayers).fill(9);
+  
+  // In 6-player games, the starting player gets 10 cards
+  const getCardCount = (playerIndex: number) => {
+    if (numPlayers === 6 && playerIndex === startingPlayerIndex) {
+      return 10;
+    }
+    return 9;
+  };
   
   let cardIndex = 0;
   for (let i = 0; i < numPlayers; i++) {
     const hand: Card[] = [];
-    for (let j = 0; j < cardsPerPlayer[i]; j++) {
+    const cardCount = getCardCount(i);
+    for (let j = 0; j < cardCount; j++) {
       hand.push(shuffled[cardIndex++]);
     }
     hands.push(hand);
@@ -132,6 +141,14 @@ function isJQKStraightFlush(cards: Card[]): boolean {
 // Check if all three cards are face cards
 function isThreeFaceCards(cards: Card[]): boolean {
   return cards.every(c => c.isWild || isFaceCard(c.rank));
+}
+
+// Check if all non-wild cards are the same suit
+function isSameSuit(cards: Card[]): boolean {
+  const nonWildCards = cards.filter(c => !c.isWild);
+  if (nonWildCards.length <= 1) return true;
+  const suit = nonWildCards[0].suit;
+  return nonWildCards.every(c => c.suit === suit);
 }
 
 // Check if three of a kind (with or without wildcards)
@@ -238,12 +255,50 @@ export function evaluateHand(cards: Card[]): HandEvaluation {
   }
   
   // Default to sum modulo 10 (0-9, where 9 is best, 0 is worst)
+  // Rule: If wildcards are present, minimum sum value becomes 9 (wildcard can represent any card)
+  const hasWildcard = cards.some(c => c.isWild);
+  const sameSuit = isSameSuit(cards);
+  
+  if (hasWildcard) {
+    return {
+      type: HandType.SUM_MODULO,
+      value: 9, // Wildcard guarantees minimum of 9 (best sum)
+      description: sameSuit ? 'Sum: 9 (wild, same suit)' : 'Sum: 9 (wild)',
+      isSameSuit: sameSuit,
+    };
+  }
+  
   const sumMod = getSumModulo(cards);
   return {
     type: HandType.SUM_MODULO,
     value: sumMod, // 0-9, with 9 being best and 0 being worst
-    description: `Sum: ${sumMod}`,
+    description: sameSuit ? `Sum: ${sumMod} (same suit)` : `Sum: ${sumMod}`,
+    isSameSuit: sameSuit,
   };
+}
+
+// Get points awarded for winning with a specific hand type
+// Per spec Section 6:
+// - Three of a kind (pure or wild): 5 points
+// - Straight Flush JQK: 3 points
+// - Straight JQK: 3 points
+// - Three face cards: 3 points
+// - Sum modulo: 1 point (or 3 if same suit)
+export function getHandPoints(hand: HandEvaluation): number {
+  switch (hand.type) {
+    case HandType.THREE_OF_KIND_PURE:
+    case HandType.THREE_OF_KIND_WILD:
+      return 5;
+    case HandType.STRAIGHT_FLUSH_JQK:
+    case HandType.STRAIGHT_JQK:
+    case HandType.THREE_FACE_CARDS:
+      return 3;
+    case HandType.SUM_MODULO:
+      // isSameSuit info is stored in the hand evaluation
+      return hand.isSameSuit ? 3 : 1;
+    default:
+      return 1;
+  }
 }
 
 // Compare two hand evaluations, returns 1 if hand1 wins, -1 if hand2 wins, 0 for tie
@@ -325,21 +380,21 @@ export function compareArrangements(
     result.player2Foul = true;
   }
   
-  // Check for automatic wins (all layers = 9 without wildcards)
-  const p1AutoWin = !result.player1Foul && checkAutoWin(player1);
-  const p2AutoWin = !result.player2Foul && checkAutoWin(player2);
+  // Check for special hands (4 of a kind OR all nines without wildcards)
+  const p1SpecialHand = !result.player1Foul && hasSpecialHand(player1);
+  const p2SpecialHand = !result.player2Foul && hasSpecialHand(player2);
   
-  // If both have automatic win, it's a draw
-  if (p1AutoWin && p2AutoWin) {
+  // If both have special hands, it's a draw (per spec: "If 2 players have special hands, they are considered a draw")
+  if (p1SpecialHand && p2SpecialHand) {
     return result;
   }
   
-  // Automatic win beats everything (including opponent's foul - you still get 10 points)
-  if (p1AutoWin) {
+  // Special hand scores 10 points against opponent who doesn't have special hand
+  if (p1SpecialHand) {
     result.player1TotalPoints = 10;
     return result;
   }
-  if (p2AutoWin) {
+  if (p2SpecialHand) {
     result.player2TotalPoints = 10;
     return result;
   }
@@ -371,6 +426,13 @@ export function compareArrangements(
     
     const comparison = compareHands(p1Eval, p2Eval);
     
+    // Determine points based on winning hand type per spec Section 6:
+    // - Three of a kind (pure/wild): 5 points
+    // - Straight Flush/Straight JQK/Three Face Cards: 3 points
+    // - Sum modulo: 1 point (or 3 if same suit)
+    const winningEval = comparison > 0 ? p1Eval : comparison < 0 ? p2Eval : null;
+    const pointsAwarded = winningEval ? getHandPoints(winningEval) : 0;
+    
     const layerResult: LayerComparison = {
       layer,
       player1Score: p1Eval.value,
@@ -381,9 +443,9 @@ export function compareArrangements(
     result.layerComparisons.push(layerResult);
     
     if (comparison > 0) {
-      result.player1TotalPoints += 1;
+      result.player1TotalPoints += pointsAwarded;
     } else if (comparison < 0) {
-      result.player2TotalPoints += 1;
+      result.player2TotalPoints += pointsAwarded;
     }
   }
   
@@ -472,8 +534,8 @@ export function getCardsFromArrangement(arrangement: PlayerArrangement): Card[] 
   return allCards.filter(c => c !== null) as Card[];
 }
 
-// Check for automatic win: all 3 layers have sum = 9 without wildcards
-export function checkAutoWin(player: Player): boolean {
+// Check for all nines: all 3 layers have sum = 9 without wildcards
+export function checkAllNines(player: Player): boolean {
   if (!player.arrangement) return false;
   
   const layers = [player.arrangement.top, player.arrangement.middle, player.arrangement.bottom];
@@ -496,29 +558,49 @@ export function checkAutoWin(player: Player): boolean {
   return true;
 }
 
-// Check for special bonuses (4 of a kind in hand)
-export function checkBonuses(player: Player): { hasBonus: boolean; bonusType: string | null; isAutoWin: boolean } {
-  if (!player.arrangement) return { hasBonus: false, bonusType: null, isAutoWin: false };
-  
-  // Check for automatic win (all layers = 9 without wildcards)
-  if (checkAutoWin(player)) {
-    return { hasBonus: true, bonusType: 'All Nines - Automatic Win!', isAutoWin: true };
-  }
+// Check for 4 of a kind across all 9 cards
+export function checkFourOfAKind(player: Player): boolean {
+  if (!player.arrangement) return false;
   
   const allCards = getCardsFromArrangement(player.arrangement);
   
-  // Check for 4 of a kind across all cards
   const rankCounts: Record<string, number> = {};
   for (const card of allCards) {
     if (!card.isWild) {
       rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
     }
   }
-  if (Object.values(rankCounts).some(count => count >= 4)) {
-    return { hasBonus: true, bonusType: 'Four of a Kind', isAutoWin: false };
+  
+  return Object.values(rankCounts).some(count => count >= 4);
+}
+
+// Check if player has ANY special hand (4 of a kind OR all nines without wildcards)
+// Special hands score 10 points per opponent who doesn't have a special hand
+// If both players have special hands, it's a draw
+export function hasSpecialHand(player: Player): boolean {
+  return checkAllNines(player) || checkFourOfAKind(player);
+}
+
+// Legacy alias for backward compatibility
+export function checkAutoWin(player: Player): boolean {
+  return hasSpecialHand(player);
+}
+
+// Check for special bonuses and return details
+export function checkBonuses(player: Player): { hasBonus: boolean; bonusType: string | null; isSpecialHand: boolean } {
+  if (!player.arrangement) return { hasBonus: false, bonusType: null, isSpecialHand: false };
+  
+  // Check for all nines (all layers = 9 without wildcards)
+  if (checkAllNines(player)) {
+    return { hasBonus: true, bonusType: 'All Nines - Special Hand!', isSpecialHand: true };
   }
   
-  return { hasBonus: false, bonusType: null, isAutoWin: false };
+  // Check for 4 of a kind across all cards
+  if (checkFourOfAKind(player)) {
+    return { hasBonus: true, bonusType: 'Four of a Kind - Special Hand!', isSpecialHand: true };
+  }
+  
+  return { hasBonus: false, bonusType: null, isSpecialHand: false };
 }
 
 // Find winner (richest player)

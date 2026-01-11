@@ -1,6 +1,6 @@
-# Ongdu - Chinese Poker Card Game
+# Ongdu - Casual Poker Card Game
 
-A strategic 3-layer card game based on Chinese Poker, built with Next.js 16 and React.
+A strategic 3-layer card game based on Casual Poker, built with Next.js 16 and React.
 
 ![Ongdu Game](https://img.shields.io/badge/Status-Complete-brightgreen)
 

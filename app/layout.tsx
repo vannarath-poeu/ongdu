@@ -15,8 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ongdu - Chinese Poker Card Game",
-  description: "A strategic 3-layer card game based on Chinese Poker. Arrange your cards wisely!",
+  title: "Ongdu - Casual Poker Card Game",
+  description: "A strategic 3-layer card game based on Casual Poker. Arrange your cards wisely!",
   keywords: ["card game", "poker", "chinese poker", "strategy game", "multiplayer"],
 };
 

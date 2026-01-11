@@ -18,10 +18,10 @@ The deck consists of the standard 2 to Ace (4 suits) plus 3 wildcards. The total
 **Total Cards:** 55
 
 ### 2.1 Wildcard Rules
-[TODO: Define how wildcards work]
 - Can wildcards substitute for any card? Yes
 - Do wildcards have special properties or restrictions? No
 - Are there visual distinctions for wildcards? No
+- Once a wild card is introduced into a layer, it can represent any card. Hence, minimum value of the layer becomes. It can be higher if it's 3 face cards or 3 of a kind.
 
 ## 3. Game Setup
 
@@ -86,14 +86,26 @@ Each player needs to stack up 3 layers of 3 cards. Once done, they take turn to 
 
 ## 6. Scoring System
 
+The scoring system allocates points as follow:
+1. Three of a kind - 5 points
+2. Straight Flush (Jack, Queen and King only) - 3 points
+3. Straight (Jack, Queen and King only) - 3 points
+4. Three of a kind with wildcards - 5 points
+5. Three of any Jack, Queen King - 3 points
+6. Sum of three cards modulo 10 - 1 point (or 3 if they are of the same suit)
+
+In short, when comparing a layer and player A beats player B, they get the total points of the layers defined above.
+For 1 and 4, there can be no tie. The value of the 3 of a kind is used as tiebreaker.
+
 ### 6.1 Layer-by-Layer Comparison
 For each pair of players (Player A vs Player B):
-- Compare top layer: 1 point for winner
-- Compare middle layer: 1 point for winner
-- Compare bottom layer: 1 point for winner
+- Compare top layer: Use scoring above
+- Compare middle layer: Use scoring above
+- Compare bottom layer: Use scoring above
 
 ### 6.2 Bonuses
 - Special hands: 4 of a kind, or no layer with less than 9 score for all 3 layers without wildcard
+- These special hands score 10 points per opponent who do not have special hands. If 2 players have special hands, they are considered a draw.
 
 ### 6.3 Invalid Hand (Foul)
 Fixed penalty amount of 10 points per opponent
@@ -109,7 +121,7 @@ Fixed penalty amount of 10 points per opponent
 - Game ends immediately when any player goes bankrupt
 
 ### 7.2 Game End
-- Richesst player wins
+- Richest player wins
 
 ### 7.3 Alternative End Conditions
 No.

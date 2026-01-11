@@ -28,8 +28,8 @@ function permutations<T>(arr: T[]): T[][] {
   return result;
 }
 
-// Check if arrangement qualifies for automatic win (all layers = 9, no wildcards)
-function isAutoWinArrangement(arrangement: PlayerArrangement): boolean {
+// Check if arrangement qualifies for all nines (all layers = 9, no wildcards)
+function isAllNinesArrangement(arrangement: PlayerArrangement): boolean {
   const layers = [arrangement.top, arrangement.middle, arrangement.bottom];
   
   for (const layer of layers) {
@@ -47,6 +47,29 @@ function isAutoWinArrangement(arrangement: PlayerArrangement): boolean {
   return true;
 }
 
+// Check if arrangement has 4 of a kind across all 9 cards
+function hasFourOfAKindArrangement(arrangement: PlayerArrangement): boolean {
+  const allCards = [
+    ...arrangement.top.cards,
+    ...arrangement.middle.cards,
+    ...arrangement.bottom.cards,
+  ].filter(c => c !== null) as Card[];
+  
+  const rankCounts: Record<string, number> = {};
+  for (const card of allCards) {
+    if (!card.isWild) {
+      rankCounts[card.rank] = (rankCounts[card.rank] || 0) + 1;
+    }
+  }
+  
+  return Object.values(rankCounts).some(count => count >= 4);
+}
+
+// Check if arrangement has ANY special hand (all nines OR 4 of a kind)
+function hasSpecialHandArrangement(arrangement: PlayerArrangement): boolean {
+  return isAllNinesArrangement(arrangement) || hasFourOfAKindArrangement(arrangement);
+}
+
 // Calculate arrangement score (higher is better)
 function scoreArrangement(arrangement: PlayerArrangement): number {
   const topCards = arrangement.top.cards.filter(c => c !== null) as Card[];
@@ -62,9 +85,9 @@ function scoreArrangement(arrangement: PlayerArrangement): number {
     return -Infinity;
   }
   
-  // Check for automatic win - massive bonus!
-  if (isAutoWinArrangement(arrangement)) {
-    return 10000; // Auto-win is the best possible outcome
+  // Check for special hand (all nines OR 4 of a kind) - massive bonus!
+  if (hasSpecialHandArrangement(arrangement)) {
+    return 10000; // Special hand is the best possible outcome
   }
   
   const topEval = evaluateHand(topCards);

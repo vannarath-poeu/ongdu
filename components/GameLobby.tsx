@@ -48,7 +48,7 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
             ONGDU
           </h1>
           <p className="text-slate-400 text-sm tracking-wide uppercase">
-            Chinese Poker • 3-Layer Strategy
+            Casual Poker • 3-Layer Strategy
           </p>
           <div className="flex justify-center gap-2 text-2xl">
             <span className="text-rose-500">♥</span>

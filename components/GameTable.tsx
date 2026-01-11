@@ -1,6 +1,7 @@
 'use client';
 
-import { Player, GamePhase, PlayerArrangement } from '@/lib/types';
+import { useState } from 'react';
+import { Player, GamePhase, PlayerArrangement, Card as CardType } from '@/lib/types';
 import { evaluateHand } from '@/lib/game-logic';
 import Card from './Card';
 import HandArrangement from './HandArrangement';
@@ -12,6 +13,8 @@ interface GameTableProps {
   currentRound: number;
   startingPlayerIndex: number;
   onArrangementConfirm: (arrangement: PlayerArrangement) => void;
+  onDiscard?: (card: CardType) => void;
+  onQuit: () => void;
   waitingForAI: boolean;
 }
 
@@ -22,10 +25,16 @@ export default function GameTable({
   currentRound,
   startingPlayerIndex,
   onArrangementConfirm,
+  onDiscard,
+  onQuit,
   waitingForAI,
 }: GameTableProps) {
+  const [selectedDiscardCard, setSelectedDiscardCard] = useState<CardType | null>(null);
+  const [showQuitDialog, setShowQuitDialog] = useState(false);
   const humanPlayer = players.find(p => p.isHuman);
   const aiPlayers = players.filter(p => !p.isHuman);
+  const startingPlayer = players[startingPlayerIndex];
+  const isHumanStartingPlayer = startingPlayer?.isHuman;
 
   const renderOpponentCard = (player: Player, index: number) => {
     const isReady = player.isReady;
@@ -87,6 +96,9 @@ export default function GameTable({
     );
   };
 
+  // During arrangement/discard phase, use compact layout
+  const isArrangementPhase = phase === 'arrangement' || phase === 'discard';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
       {/* Ambient background */}
@@ -98,75 +110,184 @@ export default function GameTable({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(16,185,129,0.05)_0%,_transparent_70%)]" />
       </div>
 
-      {/* Game Header */}
-      <div className="relative z-10 flex items-center justify-between p-4 border-b border-slate-800/50">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+      {/* Quit Confirmation Dialog */}
+      {showQuitDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowQuitDialog(false)}
+          />
+          
+          {/* Dialog */}
+          <div className="relative bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-100 mb-2">Quit Game?</h3>
+            <p className="text-slate-400 mb-6">
+              Are you sure you want to quit? Your current game progress will be lost.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowQuitDialog(false)}
+                className="flex-1 py-2.5 px-4 rounded-lg font-medium
+                  bg-slate-700 text-slate-300 
+                  hover:bg-slate-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowQuitDialog(false);
+                  onQuit();
+                }}
+                className="flex-1 py-2.5 px-4 rounded-lg font-medium
+                  bg-gradient-to-r from-rose-500 to-red-500 text-white
+                  hover:from-rose-400 hover:to-red-400 transition-colors"
+              >
+                Quit Game
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compact Header */}
+      <div className="relative z-10 flex items-center justify-between px-4 py-2 border-b border-slate-800/50">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowQuitDialog(true)}
+            className="text-lg font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent hover:from-amber-300 hover:to-orange-300 transition-all"
+          >
             ONGDU
-          </h1>
-          <span className="px-2 py-1 rounded bg-slate-800/50 text-slate-400 text-sm">
-            Round {currentRound}
+          </button>
+          <span className="px-2 py-0.5 rounded bg-slate-800/50 text-slate-400 text-xs">
+            R{currentRound}
+          </span>
+          <span className="text-emerald-400 text-xs font-medium capitalize">
+            {phase === 'arrangement' ? 'Arrange' : phase}
           </span>
         </div>
         
-        <div className="flex items-center gap-4">
-          {/* Phase indicator */}
-          <div className="px-3 py-1.5 rounded-full bg-slate-800/50 text-sm">
-            <span className="text-slate-400">Phase: </span>
-            <span className="text-emerald-400 font-medium capitalize">
-              {phase === 'arrangement' ? 'Arrange Cards' : phase}
-            </span>
-          </div>
+        <div className="flex items-center gap-3">
+          {/* Compact opponents display during arrangement */}
+          {isArrangementPhase && (
+            <div className="flex items-center gap-2">
+              {aiPlayers.map((player) => (
+                <div
+                  key={player.id}
+                  className={`
+                    flex items-center gap-1.5 px-2 py-1 rounded-full text-xs
+                    ${player.isReady 
+                      ? 'bg-emerald-900/40 border border-emerald-600/40' 
+                      : 'bg-slate-800/50 border border-slate-700/40'
+                    }
+                  `}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full ${player.isReady ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                  <span className="text-slate-300">{player.name}</span>
+                  {startingPlayerIndex === players.indexOf(player) && (
+                    <span className="text-amber-400">⭐</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           
-          {/* Player count */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800/50">
-            <span className="text-slate-400 text-sm">{players.filter(p => p.isReady).length}/{players.length}</span>
-            <span className="text-emerald-400 text-sm">ready</span>
-          </div>
+          {/* Player cash */}
+          {humanPlayer && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-800/50 border border-slate-700/40">
+              <span className="text-emerald-400 font-mono text-sm font-bold">${humanPlayer.cash}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Game Table Area */}
-      <div className="relative z-10 h-[calc(100vh-64px)] flex flex-col">
-        {/* Opponents Area (top half) */}
-        <div className="relative h-1/3 min-h-[180px]">
-          {aiPlayers.map((player, idx) => renderOpponentCard(player, idx))}
-        </div>
+      <div className="relative z-10 h-[calc(100vh-48px)] flex flex-col">
+        {/* Opponents Area - only show expanded during reveal/scoring */}
+        {!isArrangementPhase && (
+          <div className="relative h-1/3 min-h-[180px]">
+            {aiPlayers.map((player, idx) => renderOpponentCard(player, idx))}
+          </div>
+        )}
 
         {/* Center Area - shows current phase info */}
-        <div className="flex-shrink-0 flex items-center justify-center py-4">
-          {waitingForAI && (
-            <div className="bg-slate-800/70 backdrop-blur-sm px-6 py-3 rounded-full border border-slate-700/50">
-              <div className="flex items-center gap-3">
-                <div className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-slate-300">AI players are arranging their cards...</span>
+        {waitingForAI && (
+          <div className="flex-shrink-0 flex items-center justify-center py-2">
+            <div className="bg-slate-800/70 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-700/50">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                <span className="text-slate-300 text-sm">AI arranging cards...</span>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Human Player Area (bottom) */}
+        {/* Human Player Area */}
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           {humanPlayer && (
             <div className="max-w-2xl mx-auto">
-              {/* Human player info bar */}
-              <div className="flex items-center justify-between mb-4 p-3 bg-slate-800/40 rounded-lg border border-slate-700/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold">
-                    {humanPlayer.name.charAt(0).toUpperCase()}
+
+              {/* Discard phase - 6 player only, starting player discards 1 card */}
+              {phase === 'discard' && isHumanStartingPlayer && (
+                <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700/30">
+                  <h3 className="text-lg font-bold text-amber-400 mb-2">Discard Phase</h3>
+                  <p className="text-slate-400 mb-4">
+                    As the starting player, you must discard 1 card from your hand of 10.
+                  </p>
+                  
+                  {/* Show all 10 cards */}
+                  <div className="flex flex-wrap gap-2 justify-center mb-4">
+                    {humanPlayer.hand.map((card) => (
+                      <div
+                        key={card.id}
+                        onClick={() => setSelectedDiscardCard(card)}
+                        className={`cursor-pointer transition-all duration-150 ${
+                          selectedDiscardCard?.id === card.id 
+                            ? 'ring-2 ring-rose-500 ring-offset-2 ring-offset-slate-900 scale-105' 
+                            : 'hover:scale-105'
+                        }`}
+                      >
+                        <Card card={card} size="md" />
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-200">{humanPlayer.name}</h3>
-                    <p className="text-xs text-slate-500">Your Hand</p>
-                  </div>
+                  
+                  {/* Confirm discard button */}
+                  <button
+                    onClick={() => {
+                      if (selectedDiscardCard && onDiscard) {
+                        onDiscard(selectedDiscardCard);
+                        setSelectedDiscardCard(null);
+                      }
+                    }}
+                    disabled={!selectedDiscardCard}
+                    className={`
+                      w-full py-3 rounded-lg font-bold transition-all
+                      ${selectedDiscardCard
+                        ? 'bg-gradient-to-r from-rose-500 to-red-500 text-white hover:from-rose-400 hover:to-red-400'
+                        : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                      }
+                    `}
+                  >
+                    {selectedDiscardCard 
+                      ? `Discard ${selectedDiscardCard.isWild ? 'Wild' : `${selectedDiscardCard.rank} of ${selectedDiscardCard.suit}`}`
+                      : 'Select a card to discard'
+                    }
+                  </button>
                 </div>
-                <div className="text-right">
-                  <div className="text-xl font-bold text-emerald-400 font-mono">
-                    ${humanPlayer.cash.toLocaleString()}
+              )}
+              
+              {/* Waiting for AI to discard (6-player, AI is starting player) */}
+              {phase === 'discard' && !isHumanStartingPlayer && (
+                <div className="bg-slate-800/40 rounded-xl p-8 border border-slate-700/30 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
                   </div>
-                  <p className="text-xs text-slate-500">Cash</p>
+                  <h3 className="text-xl font-bold text-amber-400 mb-2">Discard Phase</h3>
+                  <p className="text-slate-400">{startingPlayer?.name} is discarding a card...</p>
                 </div>
-              </div>
+              )}
 
               {/* Card arrangement interface */}
               {phase === 'arrangement' && !humanPlayer.isReady && (
