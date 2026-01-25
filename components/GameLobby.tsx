@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface GameLobbyProps {
   onStartGame: (playerCount: number, playerName: string, startingCash: number) => void;
@@ -187,6 +188,15 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
           <span>📖</span>
           <span>How to Play</span>
         </button>
+
+        {/* Card Helper Button */}
+        <Link
+          href="/helper"
+          className="w-full py-2 text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+        >
+          <span>🃏</span>
+          <span>Card Helper</span>
+        </Link>
       </div>
 
       {/* Rules Popup */}
