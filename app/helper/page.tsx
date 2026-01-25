@@ -2,21 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Card as CardType, Suit, Rank, PlayerArrangement, HandEvaluation } from '@/lib/types';
-import { evaluateHand, validateArrangement } from '@/lib/game-logic';
+import { Card as CardType, Suit, Rank, HandEvaluation } from '@/lib/types';
+import { getHandPoints } from '@/lib/game-logic';
+import {
+  EVRankedArrangement,
+  findBestArrangementsByEV,
+  findBestArrangementsByEVFor10,
+} from '@/lib/expected-value';
 import Card from '@/components/Card';
-
-// Types for the helper
-interface RankedArrangement {
-  arrangement: PlayerArrangement;
-  score: number;
-  evaluations: {
-    top: HandEvaluation;
-    middle: HandEvaluation;
-    bottom: HandEvaluation;
-  };
-  discardedCard?: CardType;
-}
 
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 const RANKS: Rank[] = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -41,8 +34,10 @@ export default function HelperPage() {
   const [selectedSuit, setSelectedSuit] = useState<Suit | null>(null);
   const [textInput, setTextInput] = useState('');
   const [textError, setTextError] = useState<string | null>(null);
-  const [results, setResults] = useState<RankedArrangement[] | null>(null);
+  const [results, setResults] = useState<EVRankedArrangement[] | null>(null);
   const [expandedAlternative, setExpandedAlternative] = useState<number | null>(null);
+  const [numOpponents, setNumOpponents] = useState(1);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   // Check if a card is already selected
   const isCardSelected = (rank: Rank, suit: Suit): boolean => {
@@ -101,6 +96,44 @@ export default function HelperPage() {
     setTextInput('');
     setTextError(null);
     setResults(null);
+    setSelectedRank(null);
+    setSelectedSuit(null);
+  };
+
+  // Generate 9 random cards
+  const generateRandom = () => {
+    // Build full deck
+    const deck: CardType[] = [];
+    for (const suit of SUITS) {
+      for (const rank of RANKS) {
+        deck.push({
+          id: `${rank}-${suit}-${Date.now()}-${deck.length}`,
+          rank,
+          suit,
+          isWild: false,
+        });
+      }
+    }
+    // Add 3 wildcards
+    for (let i = 1; i <= 3; i++) {
+      deck.push({
+        id: `wild-${i}-${Date.now()}`,
+        rank: 'WILD',
+        suit: 'wild',
+        isWild: true,
+      });
+    }
+
+    // Shuffle using Fisher-Yates
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+
+    // Take first 9 cards
+    setSelectedCards(deck.slice(0, 9));
+    setResults(null);
+    setTextError(null);
     setSelectedRank(null);
     setSelectedSuit(null);
   };
@@ -183,162 +216,59 @@ export default function HelperPage() {
     setResults(null);
   };
 
-  // Generate all combinations of k elements from arr
-  const combinations = <T,>(arr: T[], k: number): T[][] => {
-    if (k === 0) return [[]];
-    if (arr.length < k) return [];
-
-    const result: T[][] = [];
-    const [first, ...rest] = arr;
-
-    for (const combo of combinations(rest, k - 1)) {
-      result.push([first, ...combo]);
-    }
-    for (const combo of combinations(rest, k)) {
-      result.push(combo);
-    }
-
-    return result;
-  };
-
-  // Score an arrangement
-  const scoreArrangement = (arrangement: PlayerArrangement): number => {
-    const topCards = arrangement.top.cards.filter(c => c !== null) as CardType[];
-    const middleCards = arrangement.middle.cards.filter(c => c !== null) as CardType[];
-    const bottomCards = arrangement.bottom.cards.filter(c => c !== null) as CardType[];
-
-    const topEval = evaluateHand(topCards);
-    const middleEval = evaluateHand(middleCards);
-    const bottomEval = evaluateHand(bottomCards);
-
-    const typeScore = (type: number): number => (7 - type) * 100;
-
-    return (typeScore(topEval.type) + topEval.value) +
-           (typeScore(middleEval.type) + middleEval.value) +
-           (typeScore(bottomEval.type) + bottomEval.value);
-  };
-
-  // Find top N arrangements for 9 cards
-  const findTopArrangements = (cards: CardType[], topN: number): RankedArrangement[] => {
-    if (cards.length !== 9) return [];
-
-    const arrangements: RankedArrangement[] = [];
-    const firstGroupCombos = combinations(cards, 3);
-
-    for (const group1 of firstGroupCombos) {
-      const remaining1 = cards.filter(c => !group1.includes(c));
-      const secondGroupCombos = combinations(remaining1, 3);
-
-      for (const group2 of secondGroupCombos) {
-        const group3 = remaining1.filter(c => !group2.includes(c));
-
-        const groups = [group1, group2, group3];
-        const permutations = [
-          [0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]
-        ];
-
-        for (const perm of permutations) {
-          const arrangement: PlayerArrangement = {
-            top: { cards: [...groups[perm[0]]] },
-            middle: { cards: [...groups[perm[1]]] },
-            bottom: { cards: [...groups[perm[2]]] },
-          };
-
-          if (validateArrangement(arrangement)) {
-            const topCards = arrangement.top.cards as CardType[];
-            const middleCards = arrangement.middle.cards as CardType[];
-            const bottomCards = arrangement.bottom.cards as CardType[];
-
-            arrangements.push({
-              arrangement,
-              score: scoreArrangement(arrangement),
-              evaluations: {
-                top: evaluateHand(topCards),
-                middle: evaluateHand(middleCards),
-                bottom: evaluateHand(bottomCards),
-              },
-            });
-          }
-        }
-      }
-    }
-
-    // Sort by score descending and remove duplicates
-    arrangements.sort((a, b) => b.score - a.score);
-
-    // Remove duplicates (same arrangement, different order found)
-    const seen = new Set<string>();
-    const unique: RankedArrangement[] = [];
-
-    for (const arr of arrangements) {
-      const key = [
-        arr.arrangement.top.cards.map(c => c?.id).sort().join(','),
-        arr.arrangement.middle.cards.map(c => c?.id).sort().join(','),
-        arr.arrangement.bottom.cards.map(c => c?.id).sort().join(','),
-      ].join('|');
-
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(arr);
-        if (unique.length >= topN) break;
-      }
-    }
-
-    return unique;
-  };
-
-  // Find best arrangements for 10 cards (try removing each card)
-  const findTopArrangementsFor10 = (cards: CardType[], topN: number): RankedArrangement[] => {
-    if (cards.length !== 10) return [];
-
-    const allArrangements: RankedArrangement[] = [];
-
-    for (let i = 0; i < 10; i++) {
-      const cardsWithout = cards.filter((_, idx) => idx !== i);
-      const discardedCard = cards[i];
-      const arrangements = findTopArrangements(cardsWithout, topN);
-
-      for (const arr of arrangements) {
-        allArrangements.push({
-          ...arr,
-          discardedCard,
-        });
-      }
-    }
-
-    // Sort by score and take top N
-    allArrangements.sort((a, b) => b.score - a.score);
-    return allArrangements.slice(0, topN);
-  };
-
-  // Calculate best arrangements
+  // Calculate best arrangements using EV
   const calculateArrangements = () => {
-    if (selectedCards.length === 9) {
-      setResults(findTopArrangements(selectedCards, 4));
-    } else if (selectedCards.length === 10) {
-      setResults(findTopArrangementsFor10(selectedCards, 4));
-    }
-    setExpandedAlternative(null);
+    setIsCalculating(true);
+    setResults(null);
+
+    // Use setTimeout to allow UI to update before heavy computation
+    setTimeout(() => {
+      let newResults: EVRankedArrangement[] = [];
+
+      if (selectedCards.length === 9) {
+        newResults = findBestArrangementsByEV(selectedCards, numOpponents, 4);
+      } else if (selectedCards.length === 10) {
+        newResults = findBestArrangementsByEVFor10(selectedCards, numOpponents, 4);
+      }
+
+      setResults(newResults);
+      setExpandedAlternative(null);
+      setIsCalculating(false);
+    }, 10);
   };
 
-  // Render an arrangement layer
-  const renderLayer = (
+  // Render an arrangement layer with EV metrics
+  const renderLayerWithEV = (
     label: string,
     cards: (CardType | null)[],
-    evaluation: HandEvaluation
-  ) => (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-2 py-2">
-      <div className="flex items-center gap-3">
-        <span className="w-10 text-xs text-slate-400 uppercase font-medium shrink-0">{label}</span>
-        <div className="flex gap-1">
-          {cards.map((card, idx) => (
-            <Card key={idx} card={card} size="sm" />
-          ))}
+    evaluation: HandEvaluation,
+    ev: number,
+    winRate: number
+  ) => {
+    const points = getHandPoints(evaluation);
+    return (
+      <div className="flex flex-col gap-1 py-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex items-center gap-3">
+            <span className="w-10 text-xs text-slate-400 uppercase font-medium shrink-0">{label}</span>
+            <div className="flex gap-1">
+              {cards.map((card, idx) => (
+                <Card key={idx} card={card} size="sm" />
+              ))}
+            </div>
+          </div>
+          <span className="text-xs text-emerald-400 sm:ml-2 ml-10">{evaluation.description}</span>
+        </div>
+        <div className="ml-10 text-xs text-slate-500">
+          <span className="text-amber-400">{points} pt{points !== 1 ? 's' : ''}</span>
+          <span className="mx-1">×</span>
+          <span className="text-indigo-400">{Math.round(winRate * 100)}%</span>
+          <span className="mx-1">=</span>
+          <span className="text-emerald-400 font-medium">{ev.toFixed(2)} EV</span>
         </div>
       </div>
-      <span className="text-xs text-emerald-400 sm:ml-2 ml-10">{evaluation.description}</span>
-    </div>
-  );
+    );
+  };
 
   const canCalculate = selectedCards.length >= 9;
 
@@ -463,14 +393,22 @@ export default function HelperPage() {
                 {selectedCards.length === 10 && ' (will discard 1)'}
               </span>
             </h2>
-            {selectedCards.length > 0 && (
+            <div className="flex gap-2">
               <button
-                onClick={clearAll}
-                className="text-xs text-slate-500 hover:text-rose-400 transition-colors"
+                onClick={generateRandom}
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
               >
-                Clear All
+                Random 9
               </button>
-            )}
+              {selectedCards.length > 0 && (
+                <button
+                  onClick={clearAll}
+                  className="text-xs text-slate-500 hover:text-rose-400 transition-colors"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
           </div>
 
           {selectedCards.length === 0 ? (
@@ -494,21 +432,53 @@ export default function HelperPage() {
           )}
         </div>
 
+        {/* Opponent Selector */}
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-medium text-slate-300">Number of Opponents</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Optimize strategy for this many opponents</p>
+            </div>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map(n => (
+                <button
+                  key={n}
+                  onClick={() => {
+                    setNumOpponents(n);
+                    setResults(null);
+                  }}
+                  className={`
+                    w-9 h-9 rounded-lg text-sm font-medium transition-all
+                    ${numOpponents === n
+                      ? 'bg-indigo-500 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                    }
+                  `}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Calculate Button */}
         <button
           onClick={calculateArrangements}
-          disabled={!canCalculate}
+          disabled={!canCalculate || isCalculating}
           className={`
             w-full py-4 rounded-xl font-bold text-lg transition-all
-            ${canCalculate
+            ${canCalculate && !isCalculating
               ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30 hover:from-indigo-400 hover:to-purple-400'
               : 'bg-slate-800 text-slate-500 cursor-not-allowed'
             }
           `}
         >
-          {selectedCards.length < 9
-            ? `Add ${9 - selectedCards.length} more card${9 - selectedCards.length > 1 ? 's' : ''}`
-            : 'Calculate Best Arrangement'
+          {isCalculating
+            ? 'Calculating...'
+            : selectedCards.length < 9
+              ? `Add ${9 - selectedCards.length} more card${9 - selectedCards.length > 1 ? 's' : ''}`
+              : 'Calculate Best Arrangement'
           }
         </button>
 
@@ -517,19 +487,54 @@ export default function HelperPage() {
           <div className="space-y-4">
             {/* Best Arrangement */}
             <div className="bg-slate-900/80 backdrop-blur-xl border border-emerald-500/30 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-emerald-400 font-bold">BEST ARRANGEMENT</span>
-                {results[0].discardedCard && (
-                  <span className="text-xs text-slate-400">
-                    (discard: {results[0].discardedCard.isWild ? 'Wild' : `${results[0].discardedCard.rank}${suitSymbols[results[0].discardedCard.suit as Suit]}`})
-                  </span>
-                )}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-400 font-bold">BEST ARRANGEMENT</span>
+                  {results[0].discardedCard && (
+                    <span className="text-xs text-slate-400">
+                      (discard: {results[0].discardedCard.isWild ? 'Wild' : `${results[0].discardedCard.rank}${suitSymbols[results[0].discardedCard.suit as Suit]}`})
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="divide-y divide-slate-700/50">
-                {renderLayer('Top', results[0].arrangement.top.cards, results[0].evaluations.top)}
-                {renderLayer('Mid', results[0].arrangement.middle.cards, results[0].evaluations.middle)}
-                {renderLayer('Bot', results[0].arrangement.bottom.cards, results[0].evaluations.bottom)}
+                {renderLayerWithEV(
+                  'Top',
+                  results[0].arrangement.top.cards,
+                  results[0].evaluations.top,
+                  results[0].ev.topEV,
+                  results[0].ev.winRates.top
+                )}
+                {renderLayerWithEV(
+                  'Mid',
+                  results[0].arrangement.middle.cards,
+                  results[0].evaluations.middle,
+                  results[0].ev.middleEV,
+                  results[0].ev.winRates.middle
+                )}
+                {renderLayerWithEV(
+                  'Bot',
+                  results[0].arrangement.bottom.cards,
+                  results[0].evaluations.bottom,
+                  results[0].ev.bottomEV,
+                  results[0].ev.winRates.bottom
+                )}
+              </div>
+
+              {/* Total EV Summary */}
+              <div className="mt-4 pt-3 border-t border-slate-700/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400">Total Expected Value</span>
+                  <span className="text-lg font-bold text-emerald-400">
+                    {results[0].ev.totalEV.toFixed(2)} pts
+                  </span>
+                </div>
+                {numOpponents > 1 && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    ~{(results[0].ev.totalEV / numOpponents).toFixed(2)} pts per opponent × {numOpponents} opponents
+                  </p>
+                )}
               </div>
             </div>
 
@@ -552,16 +557,39 @@ export default function HelperPage() {
                     )}
                   </span>
                   <span className="text-xs text-slate-500">
-                    {results[0].score - result.score > 0 ? `-${results[0].score - result.score}` : '0'} pts vs best
+                    <span className="text-amber-400">{result.ev.totalEV.toFixed(2)} EV</span>
+                    <span className="ml-2 text-rose-400">
+                      ({(results[0].ev.totalEV - result.ev.totalEV).toFixed(2)} less)
+                    </span>
                     <span className="ml-2">{expandedAlternative === idx ? '▲' : '▼'}</span>
                   </span>
                 </button>
 
                 {expandedAlternative === idx && (
-                  <div className="px-4 pb-4 divide-y divide-slate-700/50">
-                    {renderLayer('Top', result.arrangement.top.cards, result.evaluations.top)}
-                    {renderLayer('Mid', result.arrangement.middle.cards, result.evaluations.middle)}
-                    {renderLayer('Bot', result.arrangement.bottom.cards, result.evaluations.bottom)}
+                  <div className="px-4 pb-4">
+                    <div className="divide-y divide-slate-700/50">
+                      {renderLayerWithEV(
+                        'Top',
+                        result.arrangement.top.cards,
+                        result.evaluations.top,
+                        result.ev.topEV,
+                        result.ev.winRates.top
+                      )}
+                      {renderLayerWithEV(
+                        'Mid',
+                        result.arrangement.middle.cards,
+                        result.evaluations.middle,
+                        result.ev.middleEV,
+                        result.ev.winRates.middle
+                      )}
+                      {renderLayerWithEV(
+                        'Bot',
+                        result.arrangement.bottom.cards,
+                        result.evaluations.bottom,
+                        result.ev.bottomEV,
+                        result.ev.winRates.bottom
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
