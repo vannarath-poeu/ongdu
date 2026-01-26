@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card as CardType, PlayerArrangement, Layer } from '@/lib/types';
 import { createEmptyArrangement, isArrangementComplete, validateArrangement, evaluateHand } from '@/lib/game-logic';
-import { findBestArrangementsByEV } from '@/lib/expected-value';
+import { useAIWorker } from '@/lib/use-ai-worker';
 import Card from './Card';
 
 interface HandArrangementProps {
@@ -21,6 +21,9 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ layer: LayerName; index: number } | null>(null);
   const [isCalculatingBest, setIsCalculatingBest] = useState(false);
+
+  // Use Web Worker for off-main-thread calculation
+  const { getArrangement } = useAIWorker();
 
   useEffect(() => {
     setUnplacedCards(hand);
@@ -136,30 +139,34 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
     setSelectedSlot(null);
   };
 
-  const autoBestHand = useCallback(() => {
+  const autoBestHand = useCallback(async () => {
     if (isCalculatingBest) return;
 
     setIsCalculatingBest(true);
 
-    // Run EV calculation in next tick to allow UI to update
-    setTimeout(() => {
-      try {
-        // Use EV-based strategy with Monte Carlo simulation
-        // 100 samples provides good accuracy while keeping calculation fast
-        const results = findBestArrangementsByEV(hand, numOpponents, 1, 100);
+    try {
+      // Use Web Worker for off-main-thread EV calculation
+      // This keeps UI responsive during calculation
+      const bestArrangement = await getArrangement(hand, {
+        difficulty: 'medium', // Uses EV-based strategy with 50 samples
+        myCash: 1000,
+        opponentCashes: [],
+        startingCash: 1000,
+        numOpponents,
+      });
 
-        if (results.length > 0) {
-          const bestArrangement = results[0].arrangement;
-          setArrangement(bestArrangement);
-          setUnplacedCards([]);
-          setSelectedCard(null);
-          setSelectedSlot(null);
-        }
-      } finally {
-        setIsCalculatingBest(false);
+      if (bestArrangement) {
+        setArrangement(bestArrangement);
+        setUnplacedCards([]);
+        setSelectedCard(null);
+        setSelectedSlot(null);
       }
-    }, 10);
-  }, [hand, numOpponents, isCalculatingBest]);
+    } catch (error) {
+      console.error('Failed to calculate best hand:', error);
+    } finally {
+      setIsCalculatingBest(false);
+    }
+  }, [hand, numOpponents, isCalculatingBest, getArrangement]);
 
   const getLayerEvaluation = (layer: Layer) => {
     const cards = layer.cards.filter(c => c !== null) as CardType[];

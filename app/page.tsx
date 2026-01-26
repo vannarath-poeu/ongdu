@@ -207,31 +207,42 @@ export default function Home() {
     let cancelled = false;
     setWaitingForAI(true);
 
-    // Process AI players one by one with delays (using Web Worker)
+    // Calculate ALL AI arrangements in parallel, then show with staggered delays
     const processAI = async () => {
-      for (const aiPlayer of unreadyAI) {
-        if (cancelled) break;
-
-        await new Promise(resolve => setTimeout(resolve, getAIDelay()));
-        if (cancelled) break;
-
+      // Start all calculations in parallel
+      const calculationPromises = unreadyAI.map(async (aiPlayer) => {
         const context = createAIContext(aiPlayer);
         try {
           const arrangement = await getArrangement(aiPlayer.hand, context);
-          if (cancelled) break;
-
-          if (arrangement) {
-            setGameState(prev => ({
-              ...prev,
-              players: prev.players.map(p =>
-                p.id === aiPlayer.id
-                  ? { ...p, arrangement, isReady: true }
-                  : p
-              ),
-            }));
-          }
+          return { aiPlayer, arrangement };
         } catch (error) {
           console.error('AI arrangement error:', error);
+          return { aiPlayer, arrangement: null };
+        }
+      });
+
+      // Wait for all calculations to complete
+      const results = await Promise.all(calculationPromises);
+      if (cancelled) return;
+
+      // Show results with short staggered delays for visual effect
+      for (let i = 0; i < results.length; i++) {
+        if (cancelled) break;
+
+        const { aiPlayer, arrangement } = results[i];
+        if (arrangement) {
+          // Short staggered delay (150-300ms per player)
+          await new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 150));
+          if (cancelled) break;
+
+          setGameState(prev => ({
+            ...prev,
+            players: prev.players.map(p =>
+              p.id === aiPlayer.id
+                ? { ...p, arrangement, isReady: true }
+                : p
+            ),
+          }));
         }
       }
 

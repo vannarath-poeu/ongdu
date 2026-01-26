@@ -92,8 +92,96 @@ function combinations<T>(arr: T[], k: number): T[][] {
   return result;
 }
 
+// Fast card value for sorting (used in greedy arrangement)
+function getCardValue(card: Card): number {
+  if (card.isWild) return 15; // Wildcards are valuable
+  const values: Record<string, number> = {
+    'A': 14, 'K': 13, 'Q': 12, 'J': 11,
+    '10': 10, '9': 9, '8': 8, '7': 7,
+    '6': 6, '5': 5, '4': 4, '3': 3, '2': 2,
+  };
+  return values[card.rank] || 0;
+}
+
+// Fast greedy arrangement for opponent simulation
+// Instead of checking all 1680 combinations, use a heuristic O(n log n) approach
+function findBestArrangementFast(hand: Card[]): PlayerArrangement | null {
+  if (hand.length !== 9) return null;
+
+  // Sort cards by value (descending)
+  const sorted = [...hand].sort((a, b) => getCardValue(b) - getCardValue(a));
+
+  // Greedy assignment: best 3 to bottom, next 3 to middle, rest to top
+  const arrangement: PlayerArrangement = {
+    bottom: { cards: [sorted[0], sorted[1], sorted[2]] },
+    middle: { cards: [sorted[3], sorted[4], sorted[5]] },
+    top: { cards: [sorted[6], sorted[7], sorted[8]] },
+  };
+
+  // Check if valid, if not try swapping layers
+  if (validateArrangement(arrangement)) {
+    return arrangement;
+  }
+
+  // Try middle-bottom swap
+  const swap1: PlayerArrangement = {
+    bottom: { cards: [sorted[3], sorted[4], sorted[5]] },
+    middle: { cards: [sorted[0], sorted[1], sorted[2]] },
+    top: { cards: [sorted[6], sorted[7], sorted[8]] },
+  };
+  if (validateArrangement(swap1)) {
+    return swap1;
+  }
+
+  // Try top-middle swap
+  const swap2: PlayerArrangement = {
+    bottom: { cards: [sorted[0], sorted[1], sorted[2]] },
+    middle: { cards: [sorted[6], sorted[7], sorted[8]] },
+    top: { cards: [sorted[3], sorted[4], sorted[5]] },
+  };
+  if (validateArrangement(swap2)) {
+    return swap2;
+  }
+
+  // Fallback: reverse order
+  const reversed: PlayerArrangement = {
+    bottom: { cards: [sorted[6], sorted[7], sorted[8]] },
+    middle: { cards: [sorted[3], sorted[4], sorted[5]] },
+    top: { cards: [sorted[0], sorted[1], sorted[2]] },
+  };
+  if (validateArrangement(reversed)) {
+    return reversed;
+  }
+
+  // Last resort: just return something valid by trying a few more permutations
+  const groups = [
+    [sorted[0], sorted[1], sorted[2]],
+    [sorted[3], sorted[4], sorted[5]],
+    [sorted[6], sorted[7], sorted[8]],
+  ];
+
+  for (const [t, m, b] of [[0,1,2], [0,2,1], [1,0,2], [1,2,0], [2,0,1], [2,1,0]]) {
+    const arr: PlayerArrangement = {
+      top: { cards: groups[t] },
+      middle: { cards: groups[m] },
+      bottom: { cards: groups[b] },
+    };
+    if (validateArrangement(arr)) {
+      return arr;
+    }
+  }
+
+  return null;
+}
+
 // Find the best arrangement for a hand (used for opponent simulation)
-function findBestArrangementForHand(hand: Card[]): PlayerArrangement | null {
+// Uses fast heuristic by default, with optional full search for accuracy
+function findBestArrangementForHand(hand: Card[], useFastMode: boolean = true): PlayerArrangement | null {
+  if (useFastMode) {
+    return findBestArrangementFast(hand);
+  }
+
+  // Full brute-force search (slow but accurate)
   if (hand.length !== 9) return null;
 
   let bestArrangement: PlayerArrangement | null = null;
