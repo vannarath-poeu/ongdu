@@ -294,6 +294,7 @@ export default function GameTable({
                 <HandArrangement
                   hand={humanPlayer.hand}
                   onConfirm={onArrangementConfirm}
+                  numOpponents={aiPlayers.length}
                 />
               )}
 

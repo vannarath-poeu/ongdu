@@ -1,23 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card as CardType, PlayerArrangement, Layer } from '@/lib/types';
-import { createEmptyArrangement, isArrangementComplete, validateArrangement, evaluateHand, findBestArrangement } from '@/lib/game-logic';
+import { createEmptyArrangement, isArrangementComplete, validateArrangement, evaluateHand } from '@/lib/game-logic';
+import { findBestArrangementsByEV } from '@/lib/expected-value';
 import Card from './Card';
 
 interface HandArrangementProps {
   hand: CardType[];
   onConfirm: (arrangement: PlayerArrangement) => void;
   onArrangementChange?: (arrangement: PlayerArrangement) => void;
+  numOpponents?: number;
 }
 
 type LayerName = 'top' | 'middle' | 'bottom';
 
-export default function HandArrangement({ hand, onConfirm, onArrangementChange }: HandArrangementProps) {
+export default function HandArrangement({ hand, onConfirm, onArrangementChange, numOpponents = 3 }: HandArrangementProps) {
   const [arrangement, setArrangement] = useState<PlayerArrangement>(createEmptyArrangement);
   const [unplacedCards, setUnplacedCards] = useState<CardType[]>(hand);
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ layer: LayerName; index: number } | null>(null);
+  const [isCalculatingBest, setIsCalculatingBest] = useState(false);
 
   useEffect(() => {
     setUnplacedCards(hand);
@@ -133,15 +136,30 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange }
     setSelectedSlot(null);
   };
 
-  const autoBestHand = () => {
-    const bestArrangement = findBestArrangement(hand);
-    if (bestArrangement) {
-      setArrangement(bestArrangement);
-      setUnplacedCards([]);
-      setSelectedCard(null);
-      setSelectedSlot(null);
-    }
-  };
+  const autoBestHand = useCallback(() => {
+    if (isCalculatingBest) return;
+
+    setIsCalculatingBest(true);
+
+    // Run EV calculation in next tick to allow UI to update
+    setTimeout(() => {
+      try {
+        // Use EV-based strategy with Monte Carlo simulation
+        // 100 samples provides good accuracy while keeping calculation fast
+        const results = findBestArrangementsByEV(hand, numOpponents, 1, 100);
+
+        if (results.length > 0) {
+          const bestArrangement = results[0].arrangement;
+          setArrangement(bestArrangement);
+          setUnplacedCards([]);
+          setSelectedCard(null);
+          setSelectedSlot(null);
+        }
+      } finally {
+        setIsCalculatingBest(false);
+      }
+    }, 10);
+  }, [hand, numOpponents, isCalculatingBest]);
 
   const getLayerEvaluation = (layer: Layer) => {
     const cards = layer.cards.filter(c => c !== null) as CardType[];
@@ -196,13 +214,18 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange }
           <div className="flex items-center gap-3">
             <button
               onClick={autoBestHand}
-              className="text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 hover:border-amber-400/50 transition-all duration-200 flex items-center gap-1.5"
-              title="Auto-arrange cards into the best possible hand"
+              disabled={isCalculatingBest}
+              className={`text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 hover:border-amber-400/50 transition-all duration-200 flex items-center gap-1.5 ${isCalculatingBest ? 'opacity-70 cursor-wait' : ''}`}
+              title="Auto-arrange cards using EV-optimized strategy"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-              </svg>
-              Best Hand
+              {isCalculatingBest ? (
+                <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+                </svg>
+              )}
+              {isCalculatingBest ? 'Calculating...' : 'Best Hand'}
             </button>
             <button
               onClick={clearAll}
