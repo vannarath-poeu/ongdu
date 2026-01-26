@@ -253,13 +253,13 @@ export interface AIContext {
   numOpponents: number;
 }
 
-// Medium mode: EV-based with 30 samples (fast heuristic opponent simulation)
+// Medium mode: EV-based with 60 samples (fast heuristic opponent simulation)
 function findBestArrangementMedium(cards: Card[], numOpponents: number): PlayerArrangement {
   if (cards.length !== 9) {
     return createEmptyArrangement();
   }
 
-  const results = findBestArrangementsByEV(cards, numOpponents, 1, 30);
+  const results = findBestArrangementsByEV(cards, numOpponents, 1, 60);
   if (results.length > 0) {
     return results[0].arrangement;
   }
@@ -268,7 +268,7 @@ function findBestArrangementMedium(cards: Card[], numOpponents: number): PlayerA
   return findBestArrangement(cards);
 }
 
-// Hard mode: EV + risk adjustment + variance with 80 samples
+// Hard mode: EV + risk adjustment + variance with 150 samples
 function findBestArrangementHard(
   cards: Card[],
   myCash: number,
@@ -286,7 +286,7 @@ function findBestArrangementHard(
     opponentCashes,
     startingCash,
     numOpponents,
-    80
+    150
   );
 
   if (result) {
@@ -348,7 +348,7 @@ export function chooseCardToDiscardByDifficulty(
         context.opponentCashes,
         context.startingCash,
         context.numOpponents,
-        40
+        80
       );
       return result || chooseCardToDiscard(cards);
     }
