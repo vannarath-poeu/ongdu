@@ -8,6 +8,7 @@ import {
   PlayerArrangement,
   Card,
   RoundScore,
+  AIDifficulty,
 } from '@/lib/types';
 import {
   createDeck,
@@ -16,7 +17,8 @@ import {
   applyRoundScores,
   shouldGameEnd,
 } from '@/lib/game-logic';
-import { findBestArrangement, chooseCardToDiscard, getAIDelay } from '@/lib/ai';
+import { getAIDelay, AIContext } from '@/lib/ai';
+import { useAIWorker } from '@/lib/use-ai-worker';
 import GameLobby from '@/components/GameLobby';
 import GameTable from '@/components/GameTable';
 import ScoreDisplay from '@/components/ScoreDisplay';
@@ -32,53 +34,62 @@ export default function Home() {
     startingPlayerIndex: 0,
     currentRound: 1,
     roundScores: null,
+    aiDifficulty: 'easy',
   });
-  
+
+  // Track starting cash for risk calculations (Hard mode)
+  const [startingCash, setStartingCash] = useState(1000);
   const [waitingForAI, setWaitingForAI] = useState(false);
 
+  // AI Worker for off-main-thread calculations
+  const { getArrangement, getDiscard } = useAIWorker();
+
   // Initialize a new game
-  const initializeGame = useCallback((playerCount: number, playerName: string, startingCash: number) => {
+  const initializeGame = useCallback((playerCount: number, playerName: string, cash: number, aiDifficulty: AIDifficulty) => {
     const players: Player[] = [];
-    
+
+    // Store starting cash for risk calculations
+    setStartingCash(cash);
+
     // Human player
     players.push({
       id: 'human',
       name: playerName,
       isHuman: true,
-      cash: startingCash,
+      cash: cash,
       hand: [],
       arrangement: null,
       isReady: false,
       isBankrupt: false,
     });
-    
+
     // AI players
     for (let i = 0; i < playerCount - 1; i++) {
       players.push({
         id: `ai-${i}`,
         name: AI_NAMES[i],
         isHuman: false,
-        cash: startingCash,
+        cash: cash,
         hand: [],
         arrangement: null,
         isReady: false,
         isBankrupt: false,
       });
     }
-    
+
     // Randomly select starting player BEFORE dealing (affects who gets 10 cards in 6-player)
     const startingPlayerIndex = Math.floor(Math.random() * playerCount);
-    
+
     // Create and deal cards (starting player gets 10 cards in 6-player game)
     const deck = createDeck();
     const { hands, remainingDeck } = dealCards(deck, playerCount, startingPlayerIndex);
-    
+
     // Assign hands to players
     const playersWithHands = players.map((player, idx) => ({
       ...player,
       hand: hands[idx],
     }));
-    
+
     setGameState({
       phase: playerCount === 6 ? 'discard' : 'arrangement',
       players: playersWithHands,
@@ -87,6 +98,7 @@ export default function Home() {
       startingPlayerIndex,
       currentRound: 1,
       roundScores: null,
+      aiDifficulty,
     });
   }, []);
 
@@ -114,21 +126,52 @@ export default function Home() {
     });
   }, []);
 
+  // Helper to create AI context for difficulty-aware decisions
+  const createAIContext = useCallback((aiPlayer: Player): AIContext => {
+    const opponentCashes = gameState.players
+      .filter(p => p.id !== aiPlayer.id)
+      .map(p => p.cash);
+
+    return {
+      difficulty: gameState.aiDifficulty,
+      myCash: aiPlayer.cash,
+      opponentCashes,
+      startingCash,
+      numOpponents: gameState.players.length - 1,
+    };
+  }, [gameState.players, gameState.aiDifficulty, startingCash]);
+
   // Handle AI discard in 6-player game when starting player is AI
   useEffect(() => {
     if (gameState.phase !== 'discard') return;
-    
+
     const startingPlayer = gameState.players[gameState.startingPlayerIndex];
     if (!startingPlayer || startingPlayer.isHuman) return;
-    
-    // AI needs to discard
-    const timer = setTimeout(() => {
-      const cardToDiscard = chooseCardToDiscard(startingPlayer.hand);
-      handleDiscard(cardToDiscard);
-    }, getAIDelay());
-    
-    return () => clearTimeout(timer);
-  }, [gameState.phase, gameState.players, gameState.startingPlayerIndex, handleDiscard]);
+
+    let cancelled = false;
+
+    // AI needs to discard (using Web Worker)
+    const processDiscard = async () => {
+      await new Promise(resolve => setTimeout(resolve, getAIDelay()));
+      if (cancelled) return;
+
+      const context = createAIContext(startingPlayer);
+      try {
+        const cardToDiscard = await getDiscard(startingPlayer.hand, context);
+        if (!cancelled && cardToDiscard) {
+          handleDiscard(cardToDiscard);
+        }
+      } catch (error) {
+        console.error('AI discard error:', error);
+      }
+    };
+
+    processDiscard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gameState.phase, gameState.players, gameState.startingPlayerIndex, handleDiscard, createAIContext, getDiscard]);
 
   // Handle player arrangement confirmation
   const handleArrangementConfirm = useCallback((arrangement: PlayerArrangement) => {
@@ -154,37 +197,55 @@ export default function Home() {
   // AI players make their arrangements
   useEffect(() => {
     if (gameState.phase !== 'arrangement') return;
-    
+
     const humanPlayer = gameState.players.find(p => p.isHuman);
     if (!humanPlayer?.isReady) return;
-    
+
     const unreadyAI = gameState.players.filter(p => !p.isHuman && !p.isReady);
     if (unreadyAI.length === 0) return;
-    
+
+    let cancelled = false;
     setWaitingForAI(true);
-    
-    // Process AI players one by one with delays
+
+    // Process AI players one by one with delays (using Web Worker)
     const processAI = async () => {
       for (const aiPlayer of unreadyAI) {
+        if (cancelled) break;
+
         await new Promise(resolve => setTimeout(resolve, getAIDelay()));
-        
-        const arrangement = findBestArrangement(aiPlayer.hand);
-        
-        setGameState(prev => ({
-          ...prev,
-          players: prev.players.map(p => 
-            p.id === aiPlayer.id
-              ? { ...p, arrangement, isReady: true }
-              : p
-          ),
-        }));
+        if (cancelled) break;
+
+        const context = createAIContext(aiPlayer);
+        try {
+          const arrangement = await getArrangement(aiPlayer.hand, context);
+          if (cancelled) break;
+
+          if (arrangement) {
+            setGameState(prev => ({
+              ...prev,
+              players: prev.players.map(p =>
+                p.id === aiPlayer.id
+                  ? { ...p, arrangement, isReady: true }
+                  : p
+              ),
+            }));
+          }
+        } catch (error) {
+          console.error('AI arrangement error:', error);
+        }
       }
-      
-      setWaitingForAI(false);
+
+      if (!cancelled) {
+        setWaitingForAI(false);
+      }
     };
-    
+
     processAI();
-  }, [gameState.phase, gameState.players]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gameState.phase, gameState.players, createAIContext, getArrangement]);
 
   // Check if all players are ready and move to reveal
   useEffect(() => {
@@ -274,6 +335,7 @@ export default function Home() {
       startingPlayerIndex: 0,
       currentRound: 1,
       roundScores: null,
+      aiDifficulty: 'easy',
     });
   }, []);
 

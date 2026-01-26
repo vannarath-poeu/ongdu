@@ -5,12 +5,18 @@ import {
   PlayerArrangement,
   HandType,
   HandEvaluation,
+  AIDifficulty,
 } from './types';
 import {
   evaluateHand,
   createEmptyArrangement,
   validateArrangement,
 } from './game-logic';
+import {
+  findBestArrangementsByEV,
+  findBestArrangementWithRisk,
+  chooseDiscardWithRisk,
+} from './expected-value';
 
 // Generate all permutations of array
 function permutations<T>(arr: T[]): T[][] {
@@ -214,28 +220,142 @@ function getCardSortValue(card: Card): number {
   return rankValues[card.rank] || 0;
 }
 
-// AI chooses which card to discard in 6-player game
+// AI chooses which card to discard in 6-player game (Easy mode)
 export function chooseCardToDiscard(cards: Card[]): Card {
   if (cards.length !== 10) {
     return cards[0]; // Fallback
   }
-  
+
   // Try removing each card and see which gives best arrangement
   let bestCardToRemove = cards[0];
   let bestScore = -Infinity;
-  
+
   for (let i = 0; i < cards.length; i++) {
     const remaining = [...cards.slice(0, i), ...cards.slice(i + 1)];
     const arrangement = findBestArrangement(remaining);
     const score = scoreArrangement(arrangement);
-    
+
     if (score > bestScore) {
       bestScore = score;
       bestCardToRemove = cards[i];
     }
   }
-  
+
   return bestCardToRemove;
+}
+
+// Context for difficulty-aware AI decisions
+export interface AIContext {
+  difficulty: AIDifficulty;
+  myCash: number;
+  opponentCashes: number[];
+  startingCash: number;
+  numOpponents: number;
+}
+
+// Medium mode: EV-based with 50 samples
+function findBestArrangementMedium(cards: Card[], numOpponents: number): PlayerArrangement {
+  if (cards.length !== 9) {
+    return createEmptyArrangement();
+  }
+
+  const results = findBestArrangementsByEV(cards, numOpponents, 1, 50);
+  if (results.length > 0) {
+    return results[0].arrangement;
+  }
+
+  // Fallback to basic optimal
+  return findBestArrangement(cards);
+}
+
+// Hard mode: EV + risk adjustment + variance with 200 samples
+function findBestArrangementHard(
+  cards: Card[],
+  myCash: number,
+  opponentCashes: number[],
+  startingCash: number,
+  numOpponents: number
+): PlayerArrangement {
+  if (cards.length !== 9) {
+    return createEmptyArrangement();
+  }
+
+  const result = findBestArrangementWithRisk(
+    cards,
+    myCash,
+    opponentCashes,
+    startingCash,
+    numOpponents,
+    200
+  );
+
+  if (result) {
+    return result;
+  }
+
+  // Fallback to medium
+  return findBestArrangementMedium(cards, numOpponents);
+}
+
+// Main entry point for difficulty-aware AI arrangement
+export function findBestArrangementByDifficulty(
+  cards: Card[],
+  context: AIContext
+): PlayerArrangement {
+  switch (context.difficulty) {
+    case 'easy':
+      return findBestArrangement(cards);
+
+    case 'medium':
+      return findBestArrangementMedium(cards, context.numOpponents);
+
+    case 'hard':
+      return findBestArrangementHard(
+        cards,
+        context.myCash,
+        context.opponentCashes,
+        context.startingCash,
+        context.numOpponents
+      );
+
+    default:
+      return findBestArrangement(cards);
+  }
+}
+
+// Difficulty-aware discard for 6-player game
+export function chooseCardToDiscardByDifficulty(
+  cards: Card[],
+  context: AIContext
+): Card {
+  if (cards.length !== 10) {
+    return cards[0]; // Fallback
+  }
+
+  switch (context.difficulty) {
+    case 'easy':
+      return chooseCardToDiscard(cards);
+
+    case 'medium':
+      // Medium mode uses same discard logic as easy - EV calculation for 10 cards
+      // is too expensive for medium tier. The main benefit of medium is in arrangement.
+      return chooseCardToDiscard(cards);
+
+    case 'hard': {
+      const result = chooseDiscardWithRisk(
+        cards,
+        context.myCash,
+        context.opponentCashes,
+        context.startingCash,
+        context.numOpponents,
+        100
+      );
+      return result || chooseCardToDiscard(cards);
+    }
+
+    default:
+      return chooseCardToDiscard(cards);
+  }
 }
 
 // Get AI difficulty description based on player name

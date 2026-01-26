@@ -2,10 +2,17 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { AIDifficulty } from '@/lib/types';
 
 interface GameLobbyProps {
-  onStartGame: (playerCount: number, playerName: string, startingCash: number) => void;
+  onStartGame: (playerCount: number, playerName: string, startingCash: number, aiDifficulty: AIDifficulty) => void;
 }
+
+const DIFFICULTY_OPTIONS: { value: AIDifficulty; label: string; description: string }[] = [
+  { value: 'easy', label: 'Easy', description: 'Plays solid hands but doesn\'t adapt' },
+  { value: 'medium', label: 'Medium', description: 'Calculates odds and plays strategically' },
+  { value: 'hard', label: 'Hard', description: 'Tournament-level AI that adapts to game state' },
+];
 
 const AI_NAMES = [
   'Dragon', 'Phoenix', 'Tiger', 'Turtle', 'Serpent'
@@ -15,13 +22,14 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
   const [playerName, setPlayerName] = useState('Player');
   const [playerCount, setPlayerCount] = useState(4);
   const [startingCash, setStartingCash] = useState(1000);
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>('easy');
   const [isStarting, setIsStarting] = useState(false);
   const [showRules, setShowRules] = useState(false);
 
   const handleStart = () => {
     setIsStarting(true);
     setTimeout(() => {
-      onStartGame(playerCount, playerName, startingCash);
+      onStartGame(playerCount, playerName, startingCash, aiDifficulty);
     }, 500);
   };
 
@@ -109,13 +117,41 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
           </p>
         </div>
 
+        {/* AI Difficulty Selector */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-slate-300">
+            AI Difficulty
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {DIFFICULTY_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setAiDifficulty(option.value)}
+                className={`
+                  py-3 rounded-lg font-bold text-sm
+                  transition-all duration-200
+                  ${aiDifficulty === option.value
+                    ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-lg shadow-purple-500/30'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300 border border-slate-600/30'
+                  }
+                `}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500">
+            {DIFFICULTY_OPTIONS.find(o => o.value === aiDifficulty)?.description}
+          </p>
+        </div>
+
         {/* AI Opponents Preview */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-slate-300">
             AI Opponents
           </label>
           <div className="flex flex-wrap gap-2">
-            {AI_NAMES.slice(0, playerCount - 1).map((name, idx) => (
+            {AI_NAMES.slice(0, playerCount - 1).map((name) => (
               <div
                 key={name}
                 className="

@@ -263,7 +263,7 @@ export function findBestArrangementsByEV(
   cards: Card[],
   numOpponents: number = 1,
   topN: number = 4,
-  sampleSize: number = 100 // Reduced for performance with multiple arrangements
+  sampleSize: number = 50 // Reduced for performance with multiple arrangements
 ): EVRankedArrangement[] {
   if (cards.length !== 9) return [];
 
@@ -410,4 +410,218 @@ export function findBestArrangementsByEVFor10(
   // Sort by EV and take top N
   allArrangements.sort((a, b) => b.ev.totalEV - a.ev.totalEV);
   return allArrangements.slice(0, topN);
+}
+
+// Extended result with variance for Hard mode
+export interface EVWithVarianceResult extends ExpectedValueResult {
+  variance: number;
+  adjustedEV: number;
+}
+
+// Calculate variance of outcomes for an arrangement
+// Variance = sum of (points × winRate × (1 - winRate)) for each layer
+export function calculateVariance(ev: ExpectedValueResult): number {
+  const topVariance = ev.topEV * ev.winRates.top * (1 - ev.winRates.top);
+  const middleVariance = ev.middleEV * ev.winRates.middle * (1 - ev.winRates.middle);
+  const bottomVariance = ev.bottomEV * ev.winRates.bottom * (1 - ev.winRates.bottom);
+  return topVariance + middleVariance + bottomVariance;
+}
+
+// Calculate risk factor based on bankroll position
+// riskFactor > 0.2: ahead, prefer conservative
+// riskFactor -0.2 to 0.2: even, play standard
+// riskFactor < -0.2: behind, accept higher variance
+export function calculateRiskFactor(
+  myCash: number,
+  opponentCashes: number[],
+  startingCash: number
+): number {
+  if (opponentCashes.length === 0) return 0;
+  const avgOpponentCash = opponentCashes.reduce((a, b) => a + b, 0) / opponentCashes.length;
+  return (myCash - avgOpponentCash) / startingCash;
+}
+
+// Get risk aversion multiplier based on risk factor
+// Ahead: higher aversion (penalize variance more)
+// Behind: lower aversion (accept variance for comeback)
+function getRiskAversion(riskFactor: number): number {
+  if (riskFactor > 0.2) {
+    // Ahead - be conservative, penalize variance
+    return 0.5 + riskFactor;
+  } else if (riskFactor < -0.2) {
+    // Behind - accept variance for comeback potential
+    return Math.max(0, 0.3 + riskFactor);
+  }
+  // Even - moderate variance penalty
+  return 0.3;
+}
+
+// Find best arrangement with risk adjustment for Hard mode
+export function findBestArrangementWithRisk(
+  cards: Card[],
+  myCash: number,
+  opponentCashes: number[],
+  startingCash: number,
+  numOpponents: number = 1,
+  sampleSize: number = 200
+): PlayerArrangement | null {
+  if (cards.length !== 9) return null;
+
+  const riskFactor = calculateRiskFactor(myCash, opponentCashes, startingCash);
+  const riskAversion = getRiskAversion(riskFactor);
+
+  // First, find all valid arrangements
+  const validArrangements: {
+    arrangement: PlayerArrangement;
+    evaluations: {
+      top: HandEvaluation;
+      middle: HandEvaluation;
+      bottom: HandEvaluation;
+    };
+  }[] = [];
+
+  const firstGroupCombos = combinations(cards, 3);
+  const seen = new Set<string>();
+
+  for (const group1 of firstGroupCombos) {
+    const remaining1 = cards.filter(c => !group1.includes(c));
+    const secondGroupCombos = combinations(remaining1, 3);
+
+    for (const group2 of secondGroupCombos) {
+      const group3 = remaining1.filter(c => !group2.includes(c));
+
+      const groups = [group1, group2, group3];
+      const permutations = [
+        [0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]
+      ];
+
+      for (const perm of permutations) {
+        const arrangement: PlayerArrangement = {
+          top: { cards: [...groups[perm[0]]] },
+          middle: { cards: [...groups[perm[1]]] },
+          bottom: { cards: [...groups[perm[2]]] },
+        };
+
+        // Deduplicate
+        const key = [
+          arrangement.top.cards.map(c => c?.id).sort().join(','),
+          arrangement.middle.cards.map(c => c?.id).sort().join(','),
+          arrangement.bottom.cards.map(c => c?.id).sort().join(','),
+        ].join('|');
+
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        if (validateArrangement(arrangement)) {
+          const topCards = arrangement.top.cards as Card[];
+          const middleCards = arrangement.middle.cards as Card[];
+          const bottomCards = arrangement.bottom.cards as Card[];
+
+          validArrangements.push({
+            arrangement,
+            evaluations: {
+              top: evaluateHand(topCards),
+              middle: evaluateHand(middleCards),
+              bottom: evaluateHand(bottomCards),
+            },
+          });
+        }
+      }
+    }
+  }
+
+  if (validArrangements.length === 0) return null;
+
+  // Pre-compute opponent samples once for all arrangements
+  const remainingDeck = getRemainingDeck(cards);
+  const opponentHands = sampleOpponentHands(remainingDeck, sampleSize);
+
+  // Find best arrangements for opponents
+  const opponentArrangements: PlayerArrangement[] = [];
+  for (const hand of opponentHands) {
+    const bestArrangement = findBestArrangementForHand(hand);
+    if (bestArrangement) {
+      opponentArrangements.push(bestArrangement);
+    }
+  }
+
+  // Calculate adjusted EV for each valid arrangement
+  let bestArrangement: PlayerArrangement | null = null;
+  let bestAdjustedEV = -Infinity;
+
+  for (const { arrangement, evaluations } of validArrangements) {
+    const topCards = arrangement.top.cards as Card[];
+    const middleCards = arrangement.middle.cards as Card[];
+    const bottomCards = arrangement.bottom.cards as Card[];
+
+    const topWinRate = calculateLayerWinRate(topCards, opponentArrangements, 'top');
+    const middleWinRate = calculateLayerWinRate(middleCards, opponentArrangements, 'middle');
+    const bottomWinRate = calculateLayerWinRate(bottomCards, opponentArrangements, 'bottom');
+
+    const topPoints = getHandPoints(evaluations.top);
+    const middlePoints = getHandPoints(evaluations.middle);
+    const bottomPoints = getHandPoints(evaluations.bottom);
+
+    const topEV = topPoints * topWinRate * numOpponents;
+    const middleEV = middlePoints * middleWinRate * numOpponents;
+    const bottomEV = bottomPoints * bottomWinRate * numOpponents;
+    const totalEV = topEV + middleEV + bottomEV;
+
+    const ev: ExpectedValueResult = {
+      topEV,
+      middleEV,
+      bottomEV,
+      totalEV,
+      winRates: { top: topWinRate, middle: middleWinRate, bottom: bottomWinRate },
+    };
+
+    const variance = calculateVariance(ev);
+    const adjustedEV = totalEV - (variance * riskAversion);
+
+    if (adjustedEV > bestAdjustedEV) {
+      bestAdjustedEV = adjustedEV;
+      bestArrangement = arrangement;
+    }
+  }
+
+  return bestArrangement;
+}
+
+// Choose best discard with risk adjustment for Hard mode (6-player)
+export function chooseDiscardWithRisk(
+  cards: Card[],
+  myCash: number,
+  opponentCashes: number[],
+  startingCash: number,
+  numOpponents: number = 1,
+  sampleSize: number = 100
+): Card | null {
+  if (cards.length !== 10) return null;
+
+  const riskFactor = calculateRiskFactor(myCash, opponentCashes, startingCash);
+  const riskAversion = getRiskAversion(riskFactor);
+
+  let bestCardToDiscard: Card | null = null;
+  let bestAdjustedEV = -Infinity;
+
+  for (let i = 0; i < 10; i++) {
+    const cardsWithout = cards.filter((_, idx) => idx !== i);
+    const discardedCard = cards[i];
+
+    // Get best arrangements for this discard option
+    const arrangements = findBestArrangementsByEV(cardsWithout, numOpponents, 1, sampleSize);
+
+    if (arrangements.length > 0) {
+      const { ev } = arrangements[0];
+      const variance = calculateVariance(ev);
+      const adjustedEV = ev.totalEV - (variance * riskAversion);
+
+      if (adjustedEV > bestAdjustedEV) {
+        bestAdjustedEV = adjustedEV;
+        bestCardToDiscard = discardedCard;
+      }
+    }
+  }
+
+  return bestCardToDiscard;
 }

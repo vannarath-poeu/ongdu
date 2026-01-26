@@ -201,8 +201,21 @@ function getSumModulo(cards: Card[]): number {
   return sum % 10;
 }
 
-// Evaluate a 3-card hand
-export function evaluateHand(cards: Card[]): HandEvaluation {
+// Memoization cache for hand evaluation
+const handEvaluationCache = new Map<string, HandEvaluation>();
+
+// Clear cache (useful for testing or memory management)
+export function clearHandEvaluationCache(): void {
+  handEvaluationCache.clear();
+}
+
+// Get cache stats for debugging
+export function getHandEvaluationCacheStats(): { size: number } {
+  return { size: handEvaluationCache.size };
+}
+
+// Core hand evaluation logic (unmemoized)
+function evaluateHandCore(cards: Card[]): HandEvaluation {
   if (cards.length !== 3 || cards.some(c => c === null)) {
     return { type: HandType.SUM_MODULO, value: 0, description: 'Invalid hand' };
   }
@@ -275,6 +288,25 @@ export function evaluateHand(cards: Card[]): HandEvaluation {
     description: sameSuit ? `Sum: ${sumMod} (same suit)` : `Sum: ${sumMod}`,
     isSameSuit: sameSuit,
   };
+}
+
+// Memoized hand evaluation - caches results by card IDs
+export function evaluateHand(cards: Card[]): HandEvaluation {
+  if (cards.length !== 3 || cards.some(c => c === null)) {
+    return { type: HandType.SUM_MODULO, value: 0, description: 'Invalid hand' };
+  }
+
+  // Create cache key from sorted card IDs
+  const key = cards.map(c => c.id).sort().join('|');
+
+  const cached = handEvaluationCache.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  const result = evaluateHandCore(cards);
+  handEvaluationCache.set(key, result);
+  return result;
 }
 
 // Get points awarded for winning with a specific hand type

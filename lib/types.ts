@@ -31,7 +31,7 @@ export interface Player {
   isBankrupt: boolean;
 }
 
-export type GamePhase = 
+export type GamePhase =
   | 'lobby'
   | 'dealing'
   | 'discard'      // 6-player only
@@ -39,6 +39,8 @@ export type GamePhase =
   | 'reveal'
   | 'scoring'
   | 'gameOver';
+
+export type AIDifficulty = 'easy' | 'medium' | 'hard';
 
 export interface GameState {
   phase: GamePhase;
@@ -48,6 +50,7 @@ export interface GameState {
   startingPlayerIndex: number;
   currentRound: number;
   roundScores: RoundScore[] | null;
+  aiDifficulty: AIDifficulty;
 }
 
 export interface RoundScore {
