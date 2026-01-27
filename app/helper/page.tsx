@@ -226,9 +226,9 @@ export default function HelperPage() {
       let newResults: EVRankedArrangement[] = [];
 
       if (selectedCards.length === 9) {
-        newResults = findBestArrangementsByEV(selectedCards, numOpponents, 4);
+        newResults = findBestArrangementsByEV(selectedCards, numOpponents, 4, 800);
       } else if (selectedCards.length === 10) {
-        newResults = findBestArrangementsByEVFor10(selectedCards, numOpponents, 4);
+        newResults = findBestArrangementsByEVFor10(selectedCards, numOpponents, 4, 800);
       }
 
       setResults(newResults);
