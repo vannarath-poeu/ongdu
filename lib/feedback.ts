@@ -19,6 +19,11 @@ export interface AIFeedbackRow extends AIFeedback {
 }
 
 export async function submitFeedback(feedback: AIFeedback): Promise<{ success: boolean; id?: string; error?: string }> {
+  if (!supabase) {
+    console.error('Supabase not configured');
+    return { success: false, error: 'Supabase not configured' };
+  }
+
   const sessionId = getSessionId();
 
   const { data, error } = await supabase
@@ -39,6 +44,11 @@ export async function submitFeedback(feedback: AIFeedback): Promise<{ success: b
 }
 
 export async function getFeedbackList(): Promise<AIFeedbackRow[]> {
+  if (!supabase) {
+    console.error('Supabase not configured');
+    return [];
+  }
+
   const { data, error } = await supabase
     .from('ai_feedback')
     .select('*')
@@ -57,6 +67,11 @@ export async function getFeedbackStats(): Promise<{
   byDifficulty: Record<string, number>;
   byPlayerCount: Record<string, number>;
 }> {
+  if (!supabase) {
+    console.error('Supabase not configured');
+    return { total: 0, byDifficulty: {}, byPlayerCount: {} };
+  }
+
   const { data, error } = await supabase
     .from('ai_feedback')
     .select('ai_difficulty, player_count');
