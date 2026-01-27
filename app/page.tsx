@@ -362,6 +362,8 @@ export default function Home() {
         roundScores={gameState.roundScores || []}
         onContinue={gameState.phase === 'gameOver' ? handleGameOver : handleScoreContinue}
         isGameOver={gameState.phase === 'gameOver'}
+        currentRound={gameState.currentRound}
+        aiDifficulty={gameState.aiDifficulty}
       />
     );
   }
