@@ -116,26 +116,23 @@ function isFaceCard(rank: Rank | 'WILD'): boolean {
 }
 
 // Check if three cards form J-Q-K straight (any order)
+// Wildcards cannot be used to make straights
 function isJQKStraight(cards: Card[]): boolean {
-  const nonWildCards = cards.filter(c => !c.isWild);
-  const wildCount = cards.filter(c => c.isWild).length;
-  
-  const ranks = nonWildCards.map(c => c.rank);
-  const needed = ['J', 'Q', 'K'].filter(r => !ranks.includes(r as Rank));
-  
-  return needed.length <= wildCount && 
-         nonWildCards.every(c => isFaceCard(c.rank));
+  // Wildcards cannot contribute to straights
+  if (cards.some(c => c.isWild)) return false;
+
+  const ranks = cards.map(c => c.rank);
+  return ranks.includes('J') && ranks.includes('Q') && ranks.includes('K');
 }
 
 // Check if three cards form J-Q-K straight flush
+// Wildcards cannot be used to make straights or flushes
 function isJQKStraightFlush(cards: Card[]): boolean {
   if (!isJQKStraight(cards)) return false;
-  
-  const nonWildCards = cards.filter(c => !c.isWild);
-  if (nonWildCards.length === 0) return true;
-  
-  const suit = nonWildCards[0].suit;
-  return nonWildCards.every(c => c.suit === suit);
+
+  // All cards must be same suit (no wildcards possible at this point)
+  const suit = cards[0].suit;
+  return cards.every(c => c.suit === suit);
 }
 
 // Check if all three cards are face cards
@@ -143,12 +140,14 @@ function isThreeFaceCards(cards: Card[]): boolean {
   return cards.every(c => c.isWild || isFaceCard(c.rank));
 }
 
-// Check if all non-wild cards are the same suit
+// Check if all cards are the same suit
+// Wildcards cannot contribute to same suit bonus
 function isSameSuit(cards: Card[]): boolean {
-  const nonWildCards = cards.filter(c => !c.isWild);
-  if (nonWildCards.length <= 1) return true;
-  const suit = nonWildCards[0].suit;
-  return nonWildCards.every(c => c.suit === suit);
+  // Wildcards cannot contribute to same suit
+  if (cards.some(c => c.isWild)) return false;
+
+  const suit = cards[0].suit;
+  return cards.every(c => c.suit === suit);
 }
 
 // Check if three of a kind (with or without wildcards)
