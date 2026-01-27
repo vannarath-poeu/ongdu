@@ -44,8 +44,9 @@ function isAllNinesArrangement(arrangement: PlayerArrangement): boolean {
     if (cards.some(c => c.isWild)) return false;
     
     const eval_ = evaluateHand(cards);
-    // Must be sum modulo type with value of exactly 9
-    if (eval_.type !== HandType.SUM_MODULO || eval_.value < 9) {
+    // Must be sum 9+ OR a better hand type (three of a kind, straight, etc.)
+    // Better hand types (lower enum values) automatically qualify
+    if (eval_.type === HandType.SUM_MODULO && eval_.value < 9) {
       return false;
     }
   }
