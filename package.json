@@ -10,6 +10,7 @@
     "experiment": "npx tsx scripts/experiment.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.93.1",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3"
