@@ -1,17 +1,24 @@
 'use client';
 
-import { Player, RoundScore, PlayerArrangement } from '@/lib/types';
+import { useState } from 'react';
+import { Player, RoundScore, PlayerArrangement, AIDifficulty } from '@/lib/types';
 import { evaluateHand, hasSpecialHand, checkAllNines, checkFourOfAKind, validateArrangement } from '@/lib/game-logic';
 import Card from './Card';
+import FeedbackModal from './FeedbackModal';
 
 interface ScoreDisplayProps {
   players: Player[];
   roundScores: RoundScore[];
   onContinue: () => void;
   isGameOver: boolean;
+  currentRound: number;
+  aiDifficulty: AIDifficulty;
 }
 
-export default function ScoreDisplay({ players, roundScores, onContinue, isGameOver }: ScoreDisplayProps) {
+export default function ScoreDisplay({ players, roundScores, onContinue, isGameOver, currentRound, aiDifficulty }: ScoreDisplayProps) {
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const humanPlayer = players.find(p => p.isHuman);
+
   // Sort players by score change (winners first)
   const sortedScores = [...roundScores].sort((a, b) => b.cashChange - a.cashChange);
 
@@ -210,6 +217,22 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
           })}
         </div>
 
+        {/* Flag My Hand Button */}
+        {humanPlayer && !isGameOver && (
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className="
+              w-full py-3 rounded-xl mb-3
+              bg-slate-800 border border-amber-500/30
+              text-amber-400 font-medium
+              transition-all duration-200
+              hover:bg-slate-700 hover:border-amber-400/50
+            "
+          >
+            Flag My Hand (Report AI Issue)
+          </button>
+        )}
+
         {/* Continue Button */}
         <button
           onClick={onContinue}
@@ -227,6 +250,19 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
           {isGameOver ? 'Return to Lobby' : 'Next Round'}
         </button>
       </div>
+
+      {/* Feedback Modal */}
+      {humanPlayer && (
+        <FeedbackModal
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+          humanPlayer={humanPlayer}
+          allPlayers={players}
+          roundScores={roundScores}
+          roundNumber={currentRound}
+          aiDifficulty={aiDifficulty}
+        />
+      )}
     </div>
   );
 }
