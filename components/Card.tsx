@@ -7,7 +7,7 @@ interface CardProps {
   onClick?: () => void;
   isSelected?: boolean;
   isDisabled?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   faceDown?: boolean;
 }
 
@@ -28,6 +28,7 @@ const suitColors: Record<string, string> = {
 };
 
 const sizeClasses = {
+  xs: 'w-8 h-11 text-[8px]',
   sm: 'w-12 h-16 text-xs',
   md: 'w-16 h-24 text-sm',
   lg: 'w-20 h-28 text-base',
