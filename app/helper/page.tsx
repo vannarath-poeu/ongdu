@@ -10,6 +10,7 @@ import {
   findBestArrangementsByEVFor10,
 } from '@/lib/expected-value';
 import Card from '@/components/Card';
+import CardCameraCapture from '@/components/CardCameraCapture';
 
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
 const RANKS: Rank[] = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -293,6 +294,16 @@ export default function HelperPage() {
             Back to Game
           </Link>
         </div>
+
+        <CardCameraCapture onUseCards={(cards) => {
+          setSelectedCards(cards);
+          setResults(null);
+          setExpandedAlternative(null);
+          setSelectedRank(null);
+          setSelectedSuit(null);
+          setTextInput('');
+          setTextError(null);
+        }} />
 
         {/* Card Input Section */}
         <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4 space-y-4">

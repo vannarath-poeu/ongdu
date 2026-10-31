@@ -5,7 +5,6 @@ import { Card as CardType, PlayerArrangement, Layer } from '@/lib/types';
 import { createEmptyArrangement, isArrangementComplete, validateArrangement, evaluateHand } from '@/lib/game-logic';
 import { useAIWorker } from '@/lib/use-ai-worker';
 import Card from './Card';
-import CardCameraCapture from './CardCameraCapture';
 
 interface HandArrangementProps {
   hand: CardType[];
@@ -215,8 +214,6 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
 
   return (
     <div className="space-y-6">
-      <CardCameraCapture />
-
       {/* Arrangement Area */}
       <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 space-y-4">
         <div className="flex items-center justify-between mb-4">

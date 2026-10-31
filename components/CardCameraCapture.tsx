@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Card } from '@/lib/types';
+import CardPhotoRecognition from '@/components/CardPhotoRecognition';
 
 type CameraState = 'idle' | 'opening' | 'streaming' | 'captured' | 'error';
 
@@ -22,15 +24,17 @@ function getCameraError(error: unknown): string {
   return 'The camera could not be opened. Check your browser permissions and try again.';
 }
 
-export default function CardCameraCapture() {
+export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: Card[]) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const cameraRequestRef = useRef(0);
   const [cameraState, setCameraState] = useState<CameraState>('idle');
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const stopCamera = useCallback(() => {
+    cameraRequestRef.current += 1;
     streamRef.current?.getTracks().forEach(track => track.stop());
     streamRef.current = null;
 
@@ -43,8 +47,48 @@ export default function CardCameraCapture() {
 
   useEffect(() => stopCamera, [stopCamera]);
 
+  useEffect(() => {
+    return () => {
+      if (capturedImage?.startsWith('blob:')) URL.revokeObjectURL(capturedImage);
+    };
+  }, [capturedImage]);
+
+  const uploadPhoto = (file: File | undefined) => {
+    if (!file) return;
+
+    stopCamera();
+    setCapturedImage(null);
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please choose an image from your photo library.');
+      setCameraState('error');
+      return;
+    }
+
+    setCapturedImage(URL.createObjectURL(file));
+    setErrorMessage(null);
+    setCameraState('captured');
+  };
+
+  const uploadControl = (
+    <label className="relative w-full py-3 px-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 hover:border-indigo-400/50 transition-all flex items-center justify-center gap-2 font-medium cursor-pointer focus-within:ring-2 focus-within:ring-indigo-400">
+      <span aria-hidden="true">🖼️</span>
+      Upload Photo
+      <input
+        type="file"
+        accept="image/*"
+        aria-label="Upload photo from library"
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        onChange={(event) => {
+          uploadPhoto(event.target.files?.[0]);
+          event.target.value = '';
+        }}
+      />
+    </label>
+  );
+
   const openCamera = async () => {
     stopCamera();
+    const requestId = cameraRequestRef.current;
     setCapturedImage(null);
     setErrorMessage(null);
     setCameraState('opening');
@@ -61,13 +105,18 @@ export default function CardCameraCapture() {
         audio: false,
       });
 
+      if (requestId !== cameraRequestRef.current) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      setCameraState('streaming');
+      if (requestId === cameraRequestRef.current) setCameraState('streaming');
     } catch (error) {
+      if (requestId !== cameraRequestRef.current) return;
       stopCamera();
       setErrorMessage(getCameraError(error));
       setCameraState('error');
@@ -107,6 +156,7 @@ export default function CardCameraCapture() {
 
   if (cameraState === 'idle') {
     return (
+      <div className="grid gap-3 sm:grid-cols-2">
       <button
         type="button"
         onClick={openCamera}
@@ -115,6 +165,8 @@ export default function CardCameraCapture() {
         <span aria-hidden="true">📷</span>
         Photograph Your Cards
       </button>
+      {uploadControl}
+      </div>
     );
   }
 
@@ -123,7 +175,7 @@ export default function CardCameraCapture() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-indigo-300">Card Photo</h3>
-          <p className="text-xs text-slate-500 mt-0.5">For visual reference only. Cards are not detected automatically.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Photograph or upload your hand, detect cards locally, then review the results.</p>
         </div>
         <button
           type="button"
@@ -169,13 +221,13 @@ export default function CardCameraCapture() {
 
       {cameraState === 'captured' && capturedImage && (
         <div className="space-y-3">
-          {/* This data URL remains in component memory and is never uploaded. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={capturedImage}
-            alt="Captured cards for review"
-            className="w-full aspect-[4/3] object-contain rounded-lg bg-black border border-slate-700"
-          />
+          <CardPhotoRecognition key={capturedImage} source={capturedImage} onUseCards={onUseCards}
+            onImageError={() => {
+              setCapturedImage(null);
+              setErrorMessage('This photo could not be opened. Try a JPEG, PNG, or another browser-supported image.');
+              setCameraState('error');
+            }}
+          >
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -192,6 +244,7 @@ export default function CardCameraCapture() {
               Clear Photo
             </button>
           </div>
+          </CardPhotoRecognition>
         </div>
       )}
 
@@ -207,6 +260,7 @@ export default function CardCameraCapture() {
           </button>
         </div>
       )}
+      {uploadControl}
     </section>
   );
 }

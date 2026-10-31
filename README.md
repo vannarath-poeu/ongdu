@@ -98,6 +98,46 @@ The AI uses a brute-force algorithm to find the optimal card arrangement:
 - ✅ Comprehensive scoring display
 - ✅ Cryptographically secure card shuffling
 
+## Card Helper photo scanning
+
+At `/helper`, photograph your cards or choose **Upload Photo**, then select
+**Detect Cards in Photo**. Recognition runs locally with free Tesseract.js OCR
+and suit silhouette matching. Photos are never sent to a recognition service.
+The OCR engine and English language data download from public CDNs on first use.
+
+The scanner first looks for separate white card faces. If it finds fewer than
+nine, it also searches for exposed rank/suit pairs using local contrast, corrects
+their rotation, and retries weak OCR readings. This supports some overlapping,
+fanned hands without requiring complete card outlines or a dark background.
+Keep corner indices visible and use a sharp, close photo. Decorative, heavily
+rotated, obscured, or poorly lit cards may still be missed or misread. Wildcards
+must be marked manually in the review screen. This remains experimental; a single
+successful fan reference does not establish accuracy across decks and conditions.
+
+Review the numbered regions on the photo and correct ranks/suits below. Tap a
+region or its checkbox to include/exclude it; photos may contain more than ten
+cards. Add missed cards or remove false detections as needed. **Confirm and Use
+These Cards** replaces the current helper selection. It requires 9 or 10 selected
+cards, rejects duplicate ordinary cards, and allows up to three wildcards.
+Arrangement calculation remains a separate action.
+
+Focused scanner checks (Node 22.18+ with built-in TypeScript support):
+
+```bash
+node --test tests/card-recognition.test.mjs
+```
+
+Image/OCR checks use the canvas dev dependency and download free English OCR data
+on first use (cached in the OS temporary directory):
+
+```bash
+node --test tests/card-recognition-images.test.mjs
+```
+
+The optional `ONGDU_FAN_REFERENCE_PHOTO` environment variable points to the supplied
+13-card fan reference JPEG to enable its regression check. The reference photo is
+not included in the repository.
+
 ## 📜 License
 
 MIT
