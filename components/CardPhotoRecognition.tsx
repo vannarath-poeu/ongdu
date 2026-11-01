@@ -66,7 +66,9 @@ export default function CardPhotoRecognition({ source, onUseCards, onImageError,
   const updateCard = (index: number, change: Partial<DetectedCard>) => {
     setCards(current => current?.map((card, i) => i === index ? {
       ...card, ...change,
-      uncertain: change.rank !== undefined || change.suit !== undefined ? false : card.uncertain,
+      uncertain: change.rank !== undefined || change.suit !== undefined
+        ? !((change.rank ?? card.rank) === 'WILD' || ((change.rank ?? card.rank) && (change.suit ?? card.suit)))
+        : card.uncertain,
     } : card) ?? null);
   };
   const selectedCards = cards?.filter(card => card.included !== false) ?? [];

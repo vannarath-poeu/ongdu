@@ -230,7 +230,7 @@ export default function HelperPage() {
         </details>}
         {analysisError && <div role="alert" className="rounded-xl border border-amber-400/30 p-4 text-sm text-amber-200">{analysisError}<button type="button" onClick={() => { void calculateArrangements(); }} className="ml-3 underline">Try again</button></div>}
         <div hidden={flow !== 'input' || manualOpen}>
-          <CardCameraCapture key={photoKey} onActiveChange={setPhotoActive} onManualEntry={() => setManualOpen(true)} onUseCards={cards => {
+          <CardCameraCapture active={flow === 'input' && !manualOpen} key={photoKey} onActiveChange={setPhotoActive} onManualEntry={() => setManualOpen(true)} onUseCards={cards => {
             setSelectedCards(cards);
             setSelectedRank(null); setSelectedSuit(null); setTextInput(''); setTextError(null);
             void calculateArrangements(cards);

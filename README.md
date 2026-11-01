@@ -150,3 +150,14 @@ not included in the repository.
 ## 📜 License
 
 MIT
+
+
+### YOLO migration preparation
+
+The live photo scanner remains on its existing engine pending the acceptance gates in
+`spec/yolo-card-recognition-plan.md`. Source pinning, static checkpoint inspection,
+the fixed class mapping, and independent model-contract tests are available. See
+[model preparation status](models/card-recognition/README.md) for commands and missing
+release evidence. `npm run test:card-contract` runs the independent contract tests;
+`npm run model:inspect -- --help` describes the explicit, hash-checked source inspection.
+No model download or Python execution occurs during the application build.

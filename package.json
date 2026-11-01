@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "experiment": "npx tsx scripts/experiment.ts"
+    "experiment": "npx tsx scripts/experiment.ts",
+    "test:card-contract": "node --test tests/card-detector-contract.test.mjs",
+    "model:inspect": "python3 scripts/card-recognition/inspect_checkpoint.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.93.1",

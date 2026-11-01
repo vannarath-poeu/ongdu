@@ -1,0 +1,349 @@
+{
+  "source": {
+    "repository": "mustafakemal0146/playing-cards-yolov8",
+    "revision": "f4ccffa44144733d60499033aa1dbfb56ae7d3f4",
+    "file": "playing_cards_model_0_playing-cards-colab.pt",
+    "sha256": "fe4299466afd493c30ef88e7a0daff16734eb2fb25a58bd15bbdbee4e5d51d09"
+  },
+  "bytes": 6269354,
+  "classes": [
+    {
+      "id": 0,
+      "label": "10C",
+      "rank": "10",
+      "suit": "clubs"
+    },
+    {
+      "id": 1,
+      "label": "10D",
+      "rank": "10",
+      "suit": "diamonds"
+    },
+    {
+      "id": 2,
+      "label": "10H",
+      "rank": "10",
+      "suit": "hearts"
+    },
+    {
+      "id": 3,
+      "label": "10S",
+      "rank": "10",
+      "suit": "spades"
+    },
+    {
+      "id": 4,
+      "label": "2C",
+      "rank": "2",
+      "suit": "clubs"
+    },
+    {
+      "id": 5,
+      "label": "2D",
+      "rank": "2",
+      "suit": "diamonds"
+    },
+    {
+      "id": 6,
+      "label": "2H",
+      "rank": "2",
+      "suit": "hearts"
+    },
+    {
+      "id": 7,
+      "label": "2S",
+      "rank": "2",
+      "suit": "spades"
+    },
+    {
+      "id": 8,
+      "label": "3C",
+      "rank": "3",
+      "suit": "clubs"
+    },
+    {
+      "id": 9,
+      "label": "3D",
+      "rank": "3",
+      "suit": "diamonds"
+    },
+    {
+      "id": 10,
+      "label": "3H",
+      "rank": "3",
+      "suit": "hearts"
+    },
+    {
+      "id": 11,
+      "label": "3S",
+      "rank": "3",
+      "suit": "spades"
+    },
+    {
+      "id": 12,
+      "label": "4C",
+      "rank": "4",
+      "suit": "clubs"
+    },
+    {
+      "id": 13,
+      "label": "4D",
+      "rank": "4",
+      "suit": "diamonds"
+    },
+    {
+      "id": 14,
+      "label": "4H",
+      "rank": "4",
+      "suit": "hearts"
+    },
+    {
+      "id": 15,
+      "label": "4S",
+      "rank": "4",
+      "suit": "spades"
+    },
+    {
+      "id": 16,
+      "label": "5C",
+      "rank": "5",
+      "suit": "clubs"
+    },
+    {
+      "id": 17,
+      "label": "5D",
+      "rank": "5",
+      "suit": "diamonds"
+    },
+    {
+      "id": 18,
+      "label": "5H",
+      "rank": "5",
+      "suit": "hearts"
+    },
+    {
+      "id": 19,
+      "label": "5S",
+      "rank": "5",
+      "suit": "spades"
+    },
+    {
+      "id": 20,
+      "label": "6C",
+      "rank": "6",
+      "suit": "clubs"
+    },
+    {
+      "id": 21,
+      "label": "6D",
+      "rank": "6",
+      "suit": "diamonds"
+    },
+    {
+      "id": 22,
+      "label": "6H",
+      "rank": "6",
+      "suit": "hearts"
+    },
+    {
+      "id": 23,
+      "label": "6S",
+      "rank": "6",
+      "suit": "spades"
+    },
+    {
+      "id": 24,
+      "label": "7C",
+      "rank": "7",
+      "suit": "clubs"
+    },
+    {
+      "id": 25,
+      "label": "7D",
+      "rank": "7",
+      "suit": "diamonds"
+    },
+    {
+      "id": 26,
+      "label": "7H",
+      "rank": "7",
+      "suit": "hearts"
+    },
+    {
+      "id": 27,
+      "label": "7S",
+      "rank": "7",
+      "suit": "spades"
+    },
+    {
+      "id": 28,
+      "label": "8C",
+      "rank": "8",
+      "suit": "clubs"
+    },
+    {
+      "id": 29,
+      "label": "8D",
+      "rank": "8",
+      "suit": "diamonds"
+    },
+    {
+      "id": 30,
+      "label": "8H",
+      "rank": "8",
+      "suit": "hearts"
+    },
+    {
+      "id": 31,
+      "label": "8S",
+      "rank": "8",
+      "suit": "spades"
+    },
+    {
+      "id": 32,
+      "label": "9C",
+      "rank": "9",
+      "suit": "clubs"
+    },
+    {
+      "id": 33,
+      "label": "9D",
+      "rank": "9",
+      "suit": "diamonds"
+    },
+    {
+      "id": 34,
+      "label": "9H",
+      "rank": "9",
+      "suit": "hearts"
+    },
+    {
+      "id": 35,
+      "label": "9S",
+      "rank": "9",
+      "suit": "spades"
+    },
+    {
+      "id": 36,
+      "label": "AC",
+      "rank": "A",
+      "suit": "clubs"
+    },
+    {
+      "id": 37,
+      "label": "AD",
+      "rank": "A",
+      "suit": "diamonds"
+    },
+    {
+      "id": 38,
+      "label": "AH",
+      "rank": "A",
+      "suit": "hearts"
+    },
+    {
+      "id": 39,
+      "label": "AS",
+      "rank": "A",
+      "suit": "spades"
+    },
+    {
+      "id": 40,
+      "label": "JC",
+      "rank": "J",
+      "suit": "clubs"
+    },
+    {
+      "id": 41,
+      "label": "JD",
+      "rank": "J",
+      "suit": "diamonds"
+    },
+    {
+      "id": 42,
+      "label": "JH",
+      "rank": "J",
+      "suit": "hearts"
+    },
+    {
+      "id": 43,
+      "label": "JS",
+      "rank": "J",
+      "suit": "spades"
+    },
+    {
+      "id": 44,
+      "label": "KC",
+      "rank": "K",
+      "suit": "clubs"
+    },
+    {
+      "id": 45,
+      "label": "KD",
+      "rank": "K",
+      "suit": "diamonds"
+    },
+    {
+      "id": 46,
+      "label": "KH",
+      "rank": "K",
+      "suit": "hearts"
+    },
+    {
+      "id": 47,
+      "label": "KS",
+      "rank": "K",
+      "suit": "spades"
+    },
+    {
+      "id": 48,
+      "label": "QC",
+      "rank": "Q",
+      "suit": "clubs"
+    },
+    {
+      "id": 49,
+      "label": "QD",
+      "rank": "Q",
+      "suit": "diamonds"
+    },
+    {
+      "id": 50,
+      "label": "QH",
+      "rank": "Q",
+      "suit": "hearts"
+    },
+    {
+      "id": 51,
+      "label": "QS",
+      "rank": "Q",
+      "suit": "spades"
+    }
+  ],
+  "pickleGlobals": [
+    "ultralytics.nn.tasks DetectionModel",
+    "__builtin__ set",
+    "collections OrderedDict",
+    "torch.nn.modules.container Sequential",
+    "ultralytics.nn.modules.conv Conv",
+    "torch.nn.modules.conv Conv2d",
+    "torch._utils _rebuild_parameter",
+    "torch._utils _rebuild_tensor_v2",
+    "torch HalfStorage",
+    "torch.nn.modules.batchnorm BatchNorm2d",
+    "torch LongStorage",
+    "torch.nn.modules.activation SiLU",
+    "ultralytics.nn.modules.block C2f",
+    "torch.nn.modules.container ModuleList",
+    "ultralytics.nn.modules.block Bottleneck",
+    "ultralytics.nn.modules.block SPPF",
+    "torch.nn.modules.pooling MaxPool2d",
+    "torch.nn.modules.upsampling Upsample",
+    "ultralytics.nn.modules.conv Concat",
+    "ultralytics.nn.modules.head Detect",
+    "ultralytics.nn.modules.block DFL",
+    "torch Size",
+    "torch FloatStorage"
+  ],
+  "verification": "Static pickle inspection only; runtime architecture and box policy still require validation."
+}

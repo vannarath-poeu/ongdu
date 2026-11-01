@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Card model preparation intermediates and local evaluation data
+/models/card-recognition/.cache/
+/models/card-recognition/reports/
+/scripts/card-recognition/.venv/
+/scripts/card-recognition/__pycache__/

@@ -25,12 +25,13 @@ function getCameraError(error: unknown): string {
 }
 
 interface Props {
+  active?: boolean;
   onUseCards: (cards: Card[]) => void;
   onActiveChange?: (active: boolean) => void;
   onManualEntry?: () => void;
 }
 
-export default function CardCameraCapture({ onUseCards, onActiveChange, onManualEntry }: Props) {
+export default function CardCameraCapture({ active = true, onUseCards, onActiveChange, onManualEntry }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const cameraRequestRef = useRef(0);
@@ -52,6 +53,14 @@ export default function CardCameraCapture({ onUseCards, onActiveChange, onManual
   }, []);
 
   useEffect(() => stopCamera, [stopCamera]);
+
+  useEffect(() => {
+    if (active) return;
+    cameraRequestRef.current += 1;
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, [active]);
 
   useEffect(() => {
     return () => {
@@ -228,7 +237,7 @@ export default function CardCameraCapture({ onUseCards, onActiveChange, onManual
         </div>
       )}
 
-      {cameraState === 'captured' && capturedImage && (
+      {active && cameraState === 'captured' && capturedImage && (
         <div className="space-y-3">
           <CardPhotoRecognition key={capturedImage} source={capturedImage} onUseCards={onUseCards}
             onManualEntry={onManualEntry ? () => { clearPhoto(); onManualEntry(); } : undefined}
