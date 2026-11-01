@@ -8,7 +8,6 @@ import HandArrangement from './HandArrangement';
 
 interface GameTableProps {
   players: Player[];
-  currentPlayerIndex: number;
   phase: GamePhase;
   currentRound: number;
   startingPlayerIndex: number;
@@ -20,7 +19,6 @@ interface GameTableProps {
 
 export default function GameTable({
   players,
-  currentPlayerIndex,
   phase,
   currentRound,
   startingPlayerIndex,
@@ -38,7 +36,6 @@ export default function GameTable({
 
   const renderOpponentCard = (player: Player, index: number) => {
     const isReady = player.isReady;
-    const totalPlayers = players.length;
     
     // Position opponent cards in a semicircle at the top
     const positions = getOpponentPositions(aiPlayers.length);
@@ -316,7 +313,7 @@ export default function GameTable({
                   <div className="space-y-3">
                     {(['top', 'middle', 'bottom'] as const).map((layer) => {
                       const cards = humanPlayer.arrangement![layer].cards.filter(c => c !== null);
-                      const evaluation = cards.length === 3 ? evaluateHand(cards as any) : null;
+                      const evaluation = cards.length === 3 ? evaluateHand(cards) : null;
 
                       return (
                         <div key={layer} className="flex items-center gap-4">
@@ -345,7 +342,6 @@ export default function GameTable({
 
 // Helper to position opponents in semicircle
 function getOpponentPositions(count: number): Array<{ x: number; y: number }> {
-  const positions: Array<{ x: number; y: number }> = [];
   
   if (count === 1) {
     return [{ x: 50, y: 40 }];

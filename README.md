@@ -44,7 +44,7 @@ Open [http://localhost:3000](http://localhost:3000) to play!
 
 ## 🎯 How to Play
 
-1. **Lobby**: Choose number of players (2-6), enter your name, and set starting cash
+1. **Lobby**: Choose the number of players (2-6), difficulty, and estimated game length
 2. **Deal**: Each player receives 9 cards (10 for starting player in 6-player games)
 3. **Arrange**: Click cards to select, then click slots to place them
 4. **Reveal**: All arrangements are revealed simultaneously
@@ -161,3 +161,16 @@ the fixed class mapping, and independent model-contract tests are available. See
 release evidence. `npm run test:card-contract` runs the independent contract tests;
 `npm run model:inspect -- --help` describes the explicit, hash-checked source inspection.
 No model download or Python execution occurs during the application build.
+
+### Game length
+
+Quick, Standard, and Longer target roughly 5, 10, and 20 rounds by adjusting each
+player's starting cash for the table size. Standard is the default ($60 each for
+four players). Scoring stays $1 per point, and the game still ends at the first
+bankruptcy; these are estimates, not round limits. Cards, skill, and AI difficulty
+can lead to shorter or longer games.
+
+Initial bankroll tuning used 80 sampled easy-AI rounds per table size and 2,000
+resampled games per candidate bankroll, shuffling payout assignments between players.
+This is a small simulation baseline, not measured human-play duration. Medium/hard
+AI and human play still need calibration. The preset values live in `lib/game-setup.ts`.

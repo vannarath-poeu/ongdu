@@ -1,6 +1,6 @@
 // Web Worker for AI calculations - runs off main thread to keep UI responsive
 
-import { Card, PlayerArrangement, AIDifficulty } from './types';
+import { Card, PlayerArrangement } from './types';
 import {
   findBestArrangementByDifficulty,
   chooseCardToDiscardByDifficulty,

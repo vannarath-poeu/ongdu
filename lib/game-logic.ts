@@ -6,7 +6,6 @@ import {
   Rank,
   Player,
   PlayerArrangement,
-  Layer,
   HandType,
   HandEvaluation,
   MatchupResult,

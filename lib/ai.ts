@@ -18,22 +18,6 @@ import {
   chooseDiscardWithRisk,
 } from './expected-value';
 
-// Generate all permutations of array
-function permutations<T>(arr: T[]): T[][] {
-  if (arr.length <= 1) return [arr];
-  
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i++) {
-    const current = arr[i];
-    const remaining = [...arr.slice(0, i), ...arr.slice(i + 1)];
-    const perms = permutations(remaining);
-    for (const perm of perms) {
-      result.push([current, ...perm]);
-    }
-  }
-  return result;
-}
-
 // Check if arrangement qualifies for all nines (all layers = 9, no wildcards)
 function isAllNinesArrangement(arrangement: PlayerArrangement): boolean {
   const layers = [arrangement.top, arrangement.middle, arrangement.bottom];
@@ -359,8 +343,8 @@ export function chooseCardToDiscardByDifficulty(
   }
 }
 
-// Get AI difficulty description based on player name
-export function getAIStrategy(playerName: string): 'optimal' | 'random' | 'simple' {
+// All AI players currently use the optimal strategy.
+export function getAIStrategy(): 'optimal' | 'random' | 'simple' {
   // For now, all AI players use optimal strategy
   return 'optimal';
 }

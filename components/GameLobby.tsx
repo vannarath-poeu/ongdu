@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { AIDifficulty } from '@/lib/types';
+import { GAME_LENGTH_OPTIONS, getStartingCash, type GameLength } from '@/lib/game-setup';
 
 interface GameLobbyProps {
-  onStartGame: (playerCount: number, playerName: string, startingCash: number, aiDifficulty: AIDifficulty) => void;
+  onStartGame: (playerCount: number, startingCash: number, aiDifficulty: AIDifficulty) => void;
 }
 
 const DIFFICULTY_OPTIONS: { value: AIDifficulty; label: string; description: string }[] = [
@@ -14,23 +15,15 @@ const DIFFICULTY_OPTIONS: { value: AIDifficulty; label: string; description: str
   { value: 'hard', label: 'Hard', description: 'Tournament-level AI that adapts to game state' },
 ];
 
-const AI_NAMES = [
-  'Dragon', 'Phoenix', 'Tiger', 'Turtle', 'Serpent'
-];
-
 export default function GameLobby({ onStartGame }: GameLobbyProps) {
-  const [playerName, setPlayerName] = useState('Player');
   const [playerCount, setPlayerCount] = useState(4);
-  const [startingCash, setStartingCash] = useState(1000);
+  const [gameLength, setGameLength] = useState<GameLength>('standard');
+  const startingCash = getStartingCash(playerCount, gameLength);
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>('easy');
-  const [isStarting, setIsStarting] = useState(false);
   const [showRules, setShowRules] = useState(false);
 
   const handleStart = () => {
-    setIsStarting(true);
-    setTimeout(() => {
-      onStartGame(playerCount, playerName, startingCash, aiDifficulty);
-    }, 500);
+    onStartGame(playerCount, startingCash, aiDifficulty);
   };
 
   return (
@@ -47,9 +40,7 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
           bg-slate-900/80 backdrop-blur-xl
           border border-slate-700/50
           rounded-2xl shadow-2xl shadow-black/50
-          p-8 space-y-8
-          transition-all duration-500
-          ${isStarting ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}
+          p-6 sm:p-8 space-y-6
         `}
       >
         {/* Logo/Title */}
@@ -60,44 +51,18 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
           <p className="text-slate-400 text-sm tracking-wide uppercase">
             Casual Poker • 3-Layer Strategy
           </p>
-          <div className="flex justify-center gap-2 text-2xl">
-            <span className="text-rose-500">♥</span>
-            <span className="text-slate-300">♠</span>
-            <span className="text-rose-500">♦</span>
-            <span className="text-slate-300">♣</span>
-          </div>
-        </div>
-
-        {/* Player Name Input */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-300">
-            Your Name
-          </label>
-          <input
-            type="text"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            maxLength={12}
-            className="
-              w-full px-4 py-3 rounded-lg
-              bg-slate-800/50 border border-slate-600/50
-              text-white placeholder-slate-500
-              focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50
-              transition-all
-            "
-            placeholder="Enter your name"
-          />
         </div>
 
         {/* Player Count Selector */}
         <div className="space-y-3">
           <label className="block text-sm font-medium text-slate-300">
-            Number of Players
+            Players
           </label>
           <div className="grid grid-cols-5 gap-2">
             {[2, 3, 4, 5, 6].map((count) => (
               <button
                 key={count}
+                aria-pressed={playerCount === count}
                 onClick={() => setPlayerCount(count)}
                 className={`
                   py-3 rounded-lg font-bold text-lg
@@ -120,12 +85,13 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
         {/* AI Difficulty Selector */}
         <div className="space-y-3">
           <label className="block text-sm font-medium text-slate-300">
-            AI Difficulty
+            Difficulty
           </label>
           <div className="grid grid-cols-3 gap-2">
             {DIFFICULTY_OPTIONS.map((option) => (
               <button
                 key={option.value}
+                aria-pressed={aiDifficulty === option.value}
                 onClick={() => setAiDifficulty(option.value)}
                 className={`
                   py-3 rounded-lg font-bold text-sm
@@ -145,61 +111,31 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
           </p>
         </div>
 
-        {/* AI Opponents Preview */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-300">
-            AI Opponents
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {AI_NAMES.slice(0, playerCount - 1).map((name) => (
-              <div
-                key={name}
-                className="
-                  px-3 py-1.5 rounded-full
-                  bg-slate-800/50 border border-slate-600/30
-                  text-sm text-slate-400
-                  flex items-center gap-2
-                "
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                {name}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Starting Cash */}
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-slate-300">
-            Starting Cash
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {[500, 1000, 2000, 5000].map((amount) => (
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-medium text-slate-300">Game length</legend>
+          <div className="grid grid-cols-3 gap-2">
+            {GAME_LENGTH_OPTIONS.map(option => (
               <button
-                key={amount}
-                onClick={() => setStartingCash(amount)}
-                className={`
-                  py-2 rounded-lg font-medium text-sm
-                  transition-all duration-200
-                  ${startingCash === amount
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50 hover:text-slate-300 border border-slate-600/30'
-                  }
-                `}
+                key={option.value}
+                type="button"
+                aria-pressed={gameLength === option.value}
+                onClick={() => setGameLength(option.value)}
+                className={`rounded-lg border px-2 py-3 text-sm transition-colors ${gameLength === option.value
+                  ? 'border-emerald-500 bg-emerald-600 text-white'
+                  : 'border-slate-600/30 bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'}`}
               >
-                ${amount.toLocaleString()}
+                <span className="block font-medium">{option.label}</span>
+                <span className="mt-1 block text-xs opacity-80">~{option.rounds} rounds</span>
               </button>
             ))}
           </div>
-          <p className="text-xs text-slate-500">
-            $1 per point • Game ends when any player goes bankrupt
-          </p>
-        </div>
+          <p className="text-xs text-slate-400">${startingCash} each · $1 per point</p>
+          <p className="text-xs text-slate-500">Estimated length. Ends when anyone runs out of cash.</p>
+        </fieldset>
 
         {/* Start Button */}
         <button
           onClick={handleStart}
-          disabled={!playerName.trim()}
           className="
             w-full py-4 rounded-xl
             bg-gradient-to-r from-emerald-500 to-teal-500
@@ -209,30 +145,27 @@ export default function GameLobby({ onStartGame }: GameLobbyProps) {
             hover:from-emerald-400 hover:to-teal-400
             hover:shadow-xl hover:shadow-emerald-500/40
             hover:-translate-y-0.5
-            disabled:opacity-50 disabled:cursor-not-allowed
-            disabled:hover:translate-y-0
           "
         >
           Deal Cards
         </button>
 
-        {/* How to Play Button */}
-        <button
-          onClick={() => setShowRules(true)}
-          className="w-full py-2 text-slate-400 hover:text-amber-400 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-        >
-          <span>📖</span>
-          <span>How to Play</span>
-        </button>
+        <div className="flex items-center justify-center gap-6">
+          <button
+            onClick={() => setShowRules(true)}
+            className="py-2 text-slate-400 hover:text-amber-400 transition-colors text-sm"
+          >
+            <span>How to Play</span>
+          </button>
 
-        {/* Card Helper Button */}
-        <Link
-          href="/helper"
-          className="w-full py-2 text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-        >
-          <span>🃏</span>
-          <span>Card Helper</span>
-        </Link>
+          {/* Card Helper Button */}
+          <Link
+            href="/helper"
+            className="py-2 text-slate-400 hover:text-indigo-400 transition-colors text-sm"
+          >
+            <span>Card Helper</span>
+          </Link>
+        </div>
       </div>
 
       {/* Rules Popup */}

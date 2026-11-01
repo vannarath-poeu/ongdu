@@ -4,7 +4,6 @@
 import * as fs from 'fs';
 import {
   ExperimentConfig,
-  ExperimentSessionConfig,
   GameResult,
   CLIArgs,
   CLI_DEFAULTS,
@@ -19,15 +18,12 @@ import {
   Card,
   Player,
   PlayerArrangement,
-  AIDifficulty,
 } from '../lib/types';
 import {
   createDeck,
-  shuffleDeck,
   dealCards,
   calculateRoundScores,
   applyRoundScores,
-  createEmptyArrangement,
 } from '../lib/game-logic';
 import {
   findBestArrangementByDifficulty,
@@ -257,7 +253,6 @@ function printSummary(
 
   const hardWins = results.filter(r => r.winner === 'hard').length;
   const easyWins = results.filter(r => r.winner === 'easy').length;
-  const ties = results.filter(r => r.winner === 'tie').length;
   const hardWinRate = ((hardWins / results.length) * 100).toFixed(1);
   const easyWinRate = ((easyWins / results.length) * 100).toFixed(1);
   const winRateDiff = (hardWins - easyWins) / results.length * 100;

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Player, RoundScore, PlayerArrangement, AIDifficulty } from '@/lib/types';
-import { evaluateHand, hasSpecialHand, checkAllNines, checkFourOfAKind, validateArrangement } from '@/lib/game-logic';
+import { evaluateHand, checkAllNines, checkFourOfAKind, validateArrangement } from '@/lib/game-logic';
 import Card from './Card';
 import FeedbackModal from './FeedbackModal';
 
@@ -41,7 +41,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
     return { isSpecialHand: false, specialHandType: null, isFoul: false };
   };
 
-  const renderArrangement = (arrangement: PlayerArrangement | null, playerName: string) => {
+  const renderArrangement = (arrangement: PlayerArrangement | null) => {
     if (!arrangement) return null;
 
     const layers: Array<{ key: 'top' | 'middle' | 'bottom'; label: string }> = [
@@ -54,7 +54,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
       <div className="space-y-2">
         {layers.map(({ key, label }) => {
           const cards = arrangement[key].cards.filter(c => c !== null);
-          const evaluation = cards.length === 3 ? evaluateHand(cards as any) : null;
+          const evaluation = cards.length === 3 ? evaluateHand(cards) : null;
 
           return (
             <div key={key} className="flex items-center gap-2">
@@ -106,7 +106,6 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
             if (!player) return null;
 
             const isWinner = idx === 0 && score.cashChange > 0;
-            const isLoser = score.cashChange < 0;
             const { isSpecialHand, specialHandType, isFoul } = getPlayerStatus(player);
 
             return (
@@ -183,7 +182,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
 
                 {/* Cards */}
                 <div className="mt-4 pt-4 border-t border-slate-700/30">
-                  {renderArrangement(player.arrangement, player.name)}
+                  {renderArrangement(player.arrangement)}
                 </div>
 
                 {/* Matchups breakdown */}

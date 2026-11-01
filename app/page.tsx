@@ -3,11 +3,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   GameState,
-  GamePhase,
   Player,
   PlayerArrangement,
   Card,
-  RoundScore,
   AIDifficulty,
 } from '@/lib/types';
 import {
@@ -19,6 +17,7 @@ import {
 } from '@/lib/game-logic';
 import { getAIDelay, AIContext } from '@/lib/ai';
 import { useAIWorker } from '@/lib/use-ai-worker';
+import { getStartingCash } from '@/lib/game-setup';
 import GameLobby from '@/components/GameLobby';
 import GameTable from '@/components/GameTable';
 import ScoreDisplay from '@/components/ScoreDisplay';
@@ -38,14 +37,16 @@ export default function Home() {
   });
 
   // Track starting cash for risk calculations (Hard mode)
-  const [startingCash, setStartingCash] = useState(1000);
-  const [waitingForAI, setWaitingForAI] = useState(false);
+  const [startingCash, setStartingCash] = useState(getStartingCash(4, 'standard'));
+  const waitingForAI = gameState.phase === 'arrangement'
+    && gameState.players.some(player => player.isHuman && player.isReady)
+    && gameState.players.some(player => !player.isHuman && !player.isReady);
 
   // AI Worker for off-main-thread calculations
   const { getArrangement, getDiscard } = useAIWorker();
 
   // Initialize a new game
-  const initializeGame = useCallback((playerCount: number, playerName: string, cash: number, aiDifficulty: AIDifficulty) => {
+  const initializeGame = useCallback((playerCount: number, cash: number, aiDifficulty: AIDifficulty) => {
     const players: Player[] = [];
 
     // Store starting cash for risk calculations
@@ -54,7 +55,7 @@ export default function Home() {
     // Human player
     players.push({
       id: 'human',
-      name: playerName,
+      name: 'You',
       isHuman: true,
       cash: cash,
       hand: [],
@@ -205,7 +206,6 @@ export default function Home() {
     if (unreadyAI.length === 0) return;
 
     let cancelled = false;
-    setWaitingForAI(true);
 
     // Calculate ALL AI arrangements in parallel, then show with staggered delays
     const processAI = async () => {
@@ -246,9 +246,6 @@ export default function Home() {
         }
       }
 
-      if (!cancelled) {
-        setWaitingForAI(false);
-      }
     };
 
     processAI();
@@ -369,12 +366,10 @@ export default function Home() {
   }
 
   // Game table for dealing, discard, arrangement, reveal phases
-  const humanPlayerIndex = gameState.players.findIndex(p => p.isHuman);
   
   return (
     <GameTable
       players={gameState.players}
-      currentPlayerIndex={humanPlayerIndex}
       phase={gameState.phase}
       currentRound={gameState.currentRound}
       startingPlayerIndex={gameState.startingPlayerIndex}
