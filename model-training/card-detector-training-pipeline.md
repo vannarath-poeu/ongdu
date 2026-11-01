@@ -1,6 +1,6 @@
 # Apple Silicon card-detector training pipeline
 
-Status: Python project scaffold and pinned-placeholder evaluation implemented; training, export, candidate comparison, and acceptance stages remain to be implemented.
+Status: YOLO26 preparation, resumable training, validation, dual-head ONNX export, numerical parity, and Python ONNX Runtime inference implemented. Candidate comparison, browser verification, physical-card acceptance, and release packaging remain pending. README.md describes executable commands and boundaries; the remaining sections below are the broader target plan.
 Prepared: 2026-11-01.
 Revised: 2026-11-01 — prioritize YOLO26n and compare against a fine-tuned YOLOv8n baseline.
 Revised: 2026-11-01 — use supplied local version-4 exports; no dataset download or API key required.
@@ -36,7 +36,7 @@ This is a newly authorized training workstream extending the custom-training wor
 - Provide an isolated Python 3.11 environment with a pinned, verified YOLO26-capable Ultralytics release and compatible PyTorch/ONNX dependencies. Do not keep 8.3.240 as the shared environment merely because it serialized the old checkpoint. Verify loading and inference of the pinned v8 checkpoint in the new environment before full training; preserve the original source-inspection metadata. Record resolved dependencies, hardware, seed, configuration, dataset fingerprint, and checkpoint hashes for every run.
 - Initialize YOLO26n from a locally supplied official general-object-pretrained `data/yolo26n.pt`, with provenance and SHA-256 recorded before training. Train it on the configured class count; do not attempt to load the card-trained YOLOv8 checkpoint into the different architecture. No implicit weight download: reject missing local files before constructing an Ultralytics model.
 - Initialize the YOLOv8n baseline from the existing hash-verified card checkpoint, supplied at `data/playing_cards_model_0_playing-cards-colab.pt`. Transfer compatible weights into its configured detection model and explicitly report which head parameters are newly initialized if adding a class. Keep architecture-specific checkpoints and run directories separate.
-- Default to 640px images, batch 4, up to 100 epochs, patience 20, workers 0, and disk-backed data loading. Disable AMP on MPS. Provide configurable batch/device settings, a two-epoch smoke run, and checkpoint resume.
+- Default to 640px images, batch 8, up to 100 epochs, patience 5, workers 0, and disk-backed data loading. Disable AMP on MPS. Provide configurable batch/device settings, a two-epoch smoke run, and checkpoint resume.
 - Device selection: MPS on supported Apple Silicon, otherwise CUDA when available, otherwise CPU. Explicit device requests fail clearly when unavailable; training failures retain resumable state.
 - Use modest rotation, perspective, lighting, scale, and mosaic augmentation. Disable mirrored text augmentation and mixup; close mosaic for the final ten epochs.
 - Apply the same data, augmentation, seed, and epoch budget to both training candidates. Use the pinned trainer's supported automatic optimizer selection and record resolved optimizer/hyperparameters per model. Report actual epochs and wall-clock training time; early stopping and different pretraining make this a practical candidate comparison, not an architecture-only experiment.

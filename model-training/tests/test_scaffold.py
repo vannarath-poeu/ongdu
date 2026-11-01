@@ -69,12 +69,12 @@ class ScaffoldTests(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             status = main(["run", "--dry-run", "--config", str(self.config_path)])
         self.assertEqual(status, 0)
-        self.assertEqual(json.loads(output.getvalue())["status"], "scaffold-only")
+        self.assertEqual(json.loads(output.getvalue())["status"], "implemented-yolo26-pipeline")
         self.assertFalse((self.root / "artifacts").exists())
 
     def test_unimplemented_stages_do_not_report_success(self):
         with contextlib.redirect_stderr(io.StringIO()) as error:
-            status = main(["run", "--config", str(self.config_path)])
+            status = main(["compare", "--config", str(self.config_path)])
         self.assertEqual(status, 2)
         self.assertIn("not implemented", error.getvalue())
 

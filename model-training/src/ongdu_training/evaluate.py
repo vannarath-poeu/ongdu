@@ -74,8 +74,8 @@ def evaluate_placeholder(root, config, *, weights=None, split="val", device="cpu
         from ultralytics import YOLO, settings
     except ImportError as error:
         raise ValueError("Evaluation dependencies missing. From model-training run: uv sync --locked --extra eval") from error
-    if metadata.version("ultralytics") != "8.3.240":
-        raise ValueError("Placeholder evaluation requires ultralytics==8.3.240; run uv sync --locked --extra eval")
+    if metadata.version("ultralytics") != "8.4.197":
+        raise ValueError("Placeholder evaluation requires ultralytics==8.4.197; run uv sync --locked --extra eval")
     if device == "auto":
         device = "mps" if torch.backends.mps.is_available() else "0" if torch.cuda.is_available() else "cpu"
     if device == "mps" and not torch.backends.mps.is_available():

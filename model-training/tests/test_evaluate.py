@@ -74,7 +74,7 @@ class EvaluationTests(unittest.TestCase):
             "ultralytics": SimpleNamespace(YOLO=lambda *args, **kwargs: self.model,
                                            settings=SimpleNamespace(update=lambda values: None)),
         }))
-        stack.enter_context(patch("ongdu_training.evaluate.metadata.version", return_value="8.3.240"))
+        stack.enter_context(patch("ongdu_training.evaluate.metadata.version", return_value="8.4.197"))
         return stack
 
     def test_absent_classes_are_not_reported_as_mean_ap(self):

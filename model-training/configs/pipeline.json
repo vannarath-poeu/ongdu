@@ -16,9 +16,9 @@
   "output": "artifacts",
   "training": {
     "imgsz": 640,
-    "batch": 4,
+    "batch": 8,
     "epochs": 100,
-    "patience": 20,
+    "patience": 5,
     "workers": 0,
     "seed": 42,
     "device": "auto"
