@@ -100,8 +100,9 @@ The AI uses a brute-force algorithm to find the optimal card arrangement:
 
 ## Card Helper photo scanning
 
-At `/helper`, photograph your cards or choose **Upload Photo**, then select
-**Detect Cards in Photo**. Recognition runs locally with free Tesseract.js OCR
+At `/helper`, choose **Upload a photo** or **Take a photo**. The helper starts
+reading the image automatically, then shows a compact hand for review. Manual
+entry is available through **Enter cards instead**. Recognition runs locally with free Tesseract.js OCR
 and suit silhouette matching. Photos are never sent to a recognition service.
 The OCR engine and English language data download from public CDNs on first use.
 
@@ -114,17 +115,25 @@ rotated, obscured, or poorly lit cards may still be missed or misread. Wildcards
 must be marked manually in the review screen. This remains experimental; a single
 successful fan reference does not establish accuracy across decks and conditions.
 
-Review the numbered regions on the photo and correct ranks/suits below. Tap a
-region or its checkbox to include/exclude it; photos may contain more than ten
-cards. Add missed cards or remove false detections as needed. **Confirm and Use
-These Cards** replaces the current helper selection. It requires 9 or 10 selected
-cards, rejects duplicate ordinary cards, and allows up to three wildcards.
-Arrangement calculation remains a separate action.
+Review the detected hand, tap a card to edit it, and use its checkbox to include
+or exclude it. Uncertain cards are marked **Check**; the original photo and
+numbered regions are available under **Compare with your photo**. Photos may
+contain more than ten cards. Add missed cards or remove false detections as needed.
+**Find my best arrangement** confirms the hand and immediately starts analysis.
+It requires 9 or 10 selected cards, rejects duplicate ordinary cards, and allows
+up to three wildcards.
+
+Arrangement analysis runs in a cancellable Web Worker. The result emphasizes the
+top, middle, and bottom layers, and the recommended discard for a ten-card hand.
+Other arrangements and estimated win rates are available on demand. Table size
+defaults to two players and can be changed before scanning or after seeing a result.
+Editing a result preserves the reviewed hand; **Try another hand** resets the flow.
 
 Focused scanner checks (Node 22.18+ with built-in TypeScript support):
 
 ```bash
 node --test tests/card-recognition.test.mjs
+node --test tests/helper-analysis-worker.test.mjs
 ```
 
 Image/OCR checks use the canvas dev dependency and download free English OCR data

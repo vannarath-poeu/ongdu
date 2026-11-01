@@ -24,7 +24,13 @@ function getCameraError(error: unknown): string {
   return 'The camera could not be opened. Check your browser permissions and try again.';
 }
 
-export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: Card[]) => void }) {
+interface Props {
+  onUseCards: (cards: Card[]) => void;
+  onActiveChange?: (active: boolean) => void;
+  onManualEntry?: () => void;
+}
+
+export default function CardCameraCapture({ onUseCards, onActiveChange, onManualEntry }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const cameraRequestRef = useRef(0);
@@ -56,6 +62,7 @@ export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: 
   const uploadPhoto = (file: File | undefined) => {
     if (!file) return;
 
+    onActiveChange?.(true);
     stopCamera();
     setCapturedImage(null);
     if (!file.type.startsWith('image/')) {
@@ -70,9 +77,8 @@ export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: 
   };
 
   const uploadControl = (
-    <label className="relative w-full py-3 px-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 hover:border-indigo-400/50 transition-all flex items-center justify-center gap-2 font-medium cursor-pointer focus-within:ring-2 focus-within:ring-indigo-400">
-      <span aria-hidden="true">🖼️</span>
-      Upload Photo
+    <label className={`relative cursor-pointer rounded-xl px-5 py-3.5 text-center font-semibold transition-colors focus-within:ring-2 focus-within:ring-indigo-400 ${cameraState === 'idle' ? 'block w-full bg-amber-400 text-slate-950 hover:bg-amber-300' : 'text-sm text-indigo-300 hover:bg-slate-800'}`}>
+      {cameraState === 'idle' ? 'Upload a photo' : 'Choose another photo'}
       <input
         type="file"
         accept="image/*"
@@ -87,6 +93,7 @@ export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: 
   );
 
   const openCamera = async () => {
+    onActiveChange?.(true);
     stopCamera();
     const requestId = cameraRequestRef.current;
     setCapturedImage(null);
@@ -152,39 +159,41 @@ export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: 
     setCapturedImage(null);
     setErrorMessage(null);
     setCameraState('idle');
+    onActiveChange?.(false);
   };
 
   if (cameraState === 'idle') {
     return (
-      <div className="grid gap-3 sm:grid-cols-2">
-      <button
-        type="button"
-        onClick={openCamera}
-        className="w-full py-3 px-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 hover:border-indigo-400/50 transition-all flex items-center justify-center gap-2 font-medium"
-      >
-        <span aria-hidden="true">📷</span>
-        Photograph Your Cards
-      </button>
-      {uploadControl}
+      <div className="rounded-3xl border border-slate-700/60 bg-slate-900/80 p-6 text-center sm:p-8">
+        <svg aria-hidden="true" viewBox="0 0 100 90" className="mx-auto mb-5 h-24 w-28 text-indigo-300" fill="none">
+          <rect x="15" y="17" width="45" height="61" rx="7" transform="rotate(-18 15 17)" fill="#1e293b" stroke="currentColor" />
+          <rect x="43" y="8" width="45" height="65" rx="7" transform="rotate(14 43 8)" fill="#f8fafc" />
+          <path d="M65 29c-7-9-15 0-8 7l8 8 8-8c7-7-1-16-8-7Z" fill="#e11d48" />
+        </svg>
+        <h2 className="text-xl font-semibold text-white">Start with your cards</h2>
+        <p className="mx-auto mt-2 mb-6 max-w-xs text-sm leading-relaxed text-slate-400">Upload a photo of your hand. We’ll read the cards and help you arrange them.</p>
+        {uploadControl}
+        <button type="button" onClick={openCamera} className="mt-3 w-full rounded-xl border border-slate-600 py-3.5 font-medium text-slate-200 transition-colors hover:bg-slate-800">Take a photo</button>
+        <p className="mt-5 text-xs text-slate-500">9 cards, or 10 if you need a discard. Photos stay on your device.</p>
       </div>
     );
   }
 
   return (
-    <section className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-4 border border-indigo-500/30 space-y-3" aria-label="Card photo capture">
-      <div className="flex items-start justify-between gap-3">
+    <section className="rounded-2xl border border-slate-700/50 bg-slate-900/70 p-4 sm:p-5 space-y-4" aria-label="Read your cards">
+      {cameraState !== 'captured' && <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-indigo-300">Card Photo</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Photograph or upload your hand, detect cards locally, then review the results.</p>
+          <h3 className="text-lg font-semibold text-white">Show us your hand</h3>
+          <p className="text-sm text-slate-400 mt-1">Keep every rank and suit in view.</p>
         </div>
         <button
           type="button"
           onClick={clearPhoto}
           className="text-xs text-slate-400 hover:text-white transition-colors"
         >
-          Close
+          Back
         </button>
-      </div>
+      </div>}
 
       {(cameraState === 'opening' || cameraState === 'streaming') && (
         <div className="space-y-3">
@@ -214,7 +223,7 @@ export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: 
             disabled={!isVideoReady}
             className="w-full py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold hover:from-indigo-400 hover:to-purple-400 transition-all disabled:opacity-50 disabled:cursor-wait"
           >
-            Capture Photo
+            Use this photo
           </button>
         </div>
       )}
@@ -222,26 +231,21 @@ export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: 
       {cameraState === 'captured' && capturedImage && (
         <div className="space-y-3">
           <CardPhotoRecognition key={capturedImage} source={capturedImage} onUseCards={onUseCards}
+            onManualEntry={onManualEntry ? () => { clearPhoto(); onManualEntry(); } : undefined}
             onImageError={() => {
               setCapturedImage(null);
               setErrorMessage('This photo could not be opened. Try a JPEG, PNG, or another browser-supported image.');
               setCameraState('error');
             }}
           >
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={openCamera}
-              className="py-2.5 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 font-medium hover:bg-indigo-500/30 transition-colors"
-            >
-              Retake
-            </button>
+          <div className="flex items-center justify-between gap-2">
+            {uploadControl}
             <button
               type="button"
               onClick={clearPhoto}
-              className="py-2.5 rounded-lg bg-slate-700/60 border border-slate-600/50 text-slate-300 font-medium hover:bg-slate-700 transition-colors"
+              className="px-3 py-3 text-sm text-slate-400 hover:text-white"
             >
-              Clear Photo
+              Start over
             </button>
           </div>
           </CardPhotoRecognition>
@@ -260,7 +264,7 @@ export default function CardCameraCapture({ onUseCards }: { onUseCards: (cards: 
           </button>
         </div>
       )}
-      {uploadControl}
+      {cameraState !== 'captured' && uploadControl}
     </section>
   );
 }
