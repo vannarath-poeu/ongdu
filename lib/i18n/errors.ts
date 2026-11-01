@@ -1,6 +1,9 @@
 import { msg, type Message } from './core';
 
 export const errorMessages = {
+  SCANNER_ASSET: msg('scanner.asset'),
+  SCANNER_TIMEOUT: msg('scanner.timeout'),
+  SCANNER_RUNTIME: msg('scanner.runtime'),
   CAMERA_DENIED: msg('Camera permission was denied. Allow camera access in your browser settings, then try again.'),
   CAMERA_MISSING: msg('No camera was found on this device.'),
   CAMERA_BUSY: msg('The camera is already in use or could not be started.'),

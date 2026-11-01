@@ -116,18 +116,17 @@ The AI uses a brute-force algorithm to find the optimal card arrangement:
 
 At `/helper`, choose **Upload a photo** or **Take a photo**. The helper starts
 reading the image automatically, then shows a compact hand for review. Manual
-entry is available through **Enter cards instead**. Recognition runs locally with free Tesseract.js OCR
-and suit silhouette matching. Photos are never sent to a recognition service.
-The OCR engine and English language data download from public CDNs on first use.
+entry is available through **Enter cards instead**. The default scanner uses the
+frozen epoch-4 YOLO26n model through ONNX Runtime Web in a browser worker. Model
+and runtime assets are served from the app's origin; photos stay on the device.
+WebGPU is attempted when available, with a clean-worker WASM fallback.
 
-The scanner first looks for separate white card faces. If it finds fewer than
-nine, it also searches for exposed rank/suit pairs using local contrast, corrects
-their rotation, and retries weak OCR readings. This supports some overlapping,
-fanned hands without requiring complete card outlines or a dark background.
-Keep corner indices visible and use a sharp, close photo. Decorative, heavily
-rotated, obscured, or poorly lit cards may still be missed or misread. Wildcards
-must be marked manually in the review screen. This remains experimental; a single
-successful fan reference does not establish accuracy across decks and conditions.
+The model recognizes 52 ordinary card identities from visible corners. Matching
+rank-and-suit detections are merged into one card for Ongdu's single deck, using
+the strongest corner as the preview. Conflicting readings stay flagged for review.
+Use a sharp photo with every rank and suit visible. Add wildcards manually.
+This remains an experimental model; independent hand accuracy and named mobile
+device performance are not yet established.
 
 Review the detected hand, tap a card to edit it, and use its checkbox to include
 or exclude it. Uncertain cards are marked **Check**; the original photo and
@@ -150,7 +149,7 @@ node --test tests/card-recognition.test.mjs
 node --test tests/helper-analysis-worker.test.mjs
 ```
 
-Image/OCR checks use the canvas dev dependency and download free English OCR data
+Legacy OCR comparison checks use the canvas dev dependency and download English OCR data
 on first use (cached in the OS temporary directory):
 
 ```bash
@@ -193,3 +192,26 @@ Initial bankroll tuning used 80 sampled easy-AI rounds per table size and 2,000
 resampled games per candidate bankroll, shuffling payout assignments between players.
 This is a small simulation baseline, not measured human-play duration. Medium/hard
 AI and human play still need calibration. The preset values live in `lib/game-setup.ts`.
+
+## YOLO26 photo scanner setup
+
+Open `/helper` to use the frozen epoch-4 YOLO26 model by default while training continues independently. No scanner query parameter is required. Use `/helper?provider=wasm` to test the portable CPU path. Photos are processed locally in a dedicated browser worker; only same-origin model/runtime assets are fetched.
+
+The epoch-4 FP32 model is checked in under `public/models/card-recognition/yolo26n-epoch4-d7f58ee5-single-deck-v1/`, with its manifest, checkpoint hash, export parity evidence, source notices and license. `npm run model:prepare-runtime` copies ONNX Runtime Web 1.23.2 modules/WASM from installed npm dependencies and checks model bytes; `npm run dev` and `npm run build` run this local step automatically. No model download, export or training runs during builds.
+
+This is an experimental integration, not an accepted scanner replacement. The model detects card corners. Because Ongdu uses one ordinary deck, repeated rank-and-suit detections are merged into one review card, keeping the strongest corner and its preview/overlay. Different ranks or suits remain separate; conflicting overlapping identities stay uncertain. Manual wildcards remain independently editable. Review every card and add jokers manually. Independent 9/10-card accuracy and named mobile-device/browser benchmarks remain pending. A new trained checkpoint needs a separate immutable export and manifest update; ongoing training cannot change the loaded epoch-4 model.
+
+Run `npm run test:yolo26` for decoder/worker lifecycle checks, plus the existing card-contract, recognition, helper-worker and localization tests.
+
+Reproduce the browser checks against a production server with a supplied local card photo:
+
+```sh
+# In one terminal:
+npm run build
+npm start -- --port 3100
+
+# In another terminal (or run npx playwright install chromium first):
+ONGDU_CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run test:yolo26:browser -- /absolute/path/to/cards.jpg
+```
+
+The browser check covers real WASM inference, 20 scan/reset cycles, 9/10-card editing and arrangement handoff, cancellation, corrupt model rejection, GPU fallback and same-origin-only requests. Reports default to the ignored `models/card-recognition/reports/epoch4-browser/` directory. Desktop Chrome verification does not establish actual GPU execution, mobile performance or independent hand accuracy.

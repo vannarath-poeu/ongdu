@@ -1,7 +1,7 @@
 # Card detector migration artifacts
 
-Implementation status: source pin and static inspection recorded; Gates A/B/C remain open.
-The live scanner still uses OCR. There is no active ONNX manifest or production decoder.
+Implementation status: YOLO26 epoch-4 browser integration and desktop Chrome WASM checks completed. Independent hand accuracy, actual WebGPU execution, mobile-device benchmarks, and production acceptance remain pending.
+The default photo scanner at `/helper` uses the frozen experimental YOLO26 epoch-4 model; its verified graph and manifest are under `public/models/card-recognition/yolo26n-epoch4-d7f58ee5-single-deck-v1/`. Desktop Chrome WASM and GPU-to-WASM fallback are tested; production acceptance, actual WebGPU execution, mobile devices and independent hand accuracy remain open.
 
 The selected checkpoint is pinned in `source-inspection.json`, including its SHA-256,
 byte length, actual serialized class order and referenced Python globals. The inspection
@@ -36,8 +36,8 @@ Still needed before final decoder/integration:
 - Real browser WebGPU/WASM smoke checks, named-device latency/memory and accuracy reports.
 
 Do not create a production manifest by guessing any of these fields. The contract
-validator requires an explicit supported decoder and annotation/grouping policy; no
-adapter is enabled by default. The current boundary deliberately supports only the
+validator requires an explicit supported decoder and annotation/grouping policy.
+The default adapter is YOLO26 raw output with the single-deck identity merge policy. The current boundary deliberately supports only the
 initial FP32 52-class baseline. Joker/optimized exports need their own validation work.
 An asset hash must be checked against actual bytes before constructing a session.
 

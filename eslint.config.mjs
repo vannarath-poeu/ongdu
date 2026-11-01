@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "model-training/**",
+    "public/onnxruntime/**", // Generated, unmodified third-party runtime assets.
   ]),
 ]);
 

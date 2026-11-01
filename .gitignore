@@ -45,3 +45,6 @@ next-env.d.ts
 /models/card-recognition/reports/
 /scripts/card-recognition/.venv/
 /scripts/card-recognition/__pycache__/
+
+# Copied from the exact pinned npm runtime by model:prepare-runtime
+/public/onnxruntime/

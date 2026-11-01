@@ -1,5 +1,9 @@
 // Shared product glossary. Keep card notation and game values language-neutral.
 export const en = {
+  "scanner.experimental": "Experimental card reader. Matching corners are combined into one card. Check every card.",
+  "scanner.asset": "The card reader could not be loaded. Check your connection and try again, or enter cards manually.",
+  "scanner.timeout": "Reading this photo took too long. Try a smaller, clearer photo or enter cards manually.",
+  "scanner.runtime": "The card reader could not run on this device. Try again or enter cards manually.",
   "confirmArrangement": "Confirm arrangement",
   "Players": "Players",
   "Difficulty": "Difficulty",
@@ -295,6 +299,10 @@ export const en = {
 
 export type MessageKey = keyof typeof en;
 export const km: Record<MessageKey, string> = {
+  "scanner.experimental": "មុខងារអានបៀសាកល្បង។ ជ្រុងបៀដូចគ្នាត្រូវបានបញ្ចូលជាបៀតែមួយ។ សូមពិនិត្យបៀគ្រប់សន្លឹក។",
+  "scanner.asset": "មិនអាចផ្ទុកមុខងារអានបៀបានទេ។ សូមពិនិត្យការតភ្ជាប់ ហើយសាកម្ដងទៀត ឬបញ្ចូលបៀដោយដៃ។",
+  "scanner.timeout": "ការអានរូបថតនេះចំណាយពេលយូរពេក។ សូមសាករូបថតតូច និងច្បាស់ជាងនេះ ឬបញ្ចូលបៀដោយដៃ។",
+  "scanner.runtime": "មុខងារអានបៀមិនអាចដំណើរការលើឧបករណ៍នេះបានទេ។ សូមសាកម្ដងទៀត ឬបញ្ចូលបៀដោយដៃ។",
   "confirmArrangement": "បញ្ជាក់ការរៀបបៀ",
   "Players": "អ្នកលេង",
   "Difficulty": "កម្រិតលំបាក",

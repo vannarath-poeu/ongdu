@@ -7,7 +7,7 @@ import { useLocale } from '@/lib/i18n/context';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Card as CardType, Rank, Suit } from '@/lib/types';
 import Card from '@/components/Card';
-import { detectedCardsToHand, recognizeCardPhoto, SCAN_RANKS, validateDetectedCardsMessage, type DetectedCard } from '@/lib/card-recognition';
+import { detectedCardsToHand, SCAN_RANKS, validateDetectedCardsMessage, type DetectedCard } from '@/lib/card-recognition';
 
 interface Props {
   source: string;
@@ -35,18 +35,23 @@ export default function CardPhotoRecognition({ source, onUseCards, onImageError,
     setProgress(msg('Getting your photo ready…'));
     const timeout = setTimeout(() => {
       controller.abort(); setBusy(false);
-      setError('PHOTO_TIMEOUT');
+      setError('SCANNER_TIMEOUT');
     }, 120_000);
     const clearScanTimeout = () => clearTimeout(timeout);
     controller.signal.addEventListener('abort', clearScanTimeout, { once: true });
     try {
-      const results = await recognizeCardPhoto(source, controller.signal, status => {
+      const { recognizeYoloPhoto } = await import('@/lib/card-detector/client');
+      controller.signal.throwIfAborted();
+      const results = await recognizeYoloPhoto(source, controller.signal, status => {
         if (controller.signal.aborted) return;
         setProgress(msg(status.startsWith('Loading') ? 'Getting ready to read your cards…' : status.startsWith('Reading') ? 'Reading your cards…' : 'Finding your cards…'));
       });
       if (!controller.signal.aborted) setCards(results);
-    } catch {
-      if (!controller.signal.aborted) setError('PHOTO_READ');
+    } catch (scanError) {
+      if (!controller.signal.aborted) {
+        const code = scanError instanceof Error && 'code' in scanError ? scanError.code : undefined;
+        setError(code === 'ASSET' ? 'SCANNER_ASSET' : code === 'TIMEOUT' ? 'SCANNER_TIMEOUT' : code === 'RUNTIME' ? 'SCANNER_RUNTIME' : 'PHOTO_READ');
+      }
     } finally {
       clearTimeout(timeout);
       controller.signal.removeEventListener('abort', clearScanTimeout);
@@ -83,6 +88,7 @@ export default function CardPhotoRecognition({ source, onUseCards, onImageError,
 
   return (
     <div className="space-y-5">
+      <p role="note" className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-3 text-sm text-amber-200">{t("scanner.experimental")}</p>
       {busy && (
         <div className="rounded-2xl border border-indigo-400/20 bg-slate-900 p-8 text-center space-y-4" role="status" aria-live="polite">
           {/* eslint-disable-next-line @next/next/no-img-element */}

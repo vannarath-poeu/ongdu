@@ -10,11 +10,17 @@
     "experiment": "npx tsx scripts/experiment.ts",
     "test:card-contract": "node --test tests/card-detector-contract.test.mjs",
     "model:inspect": "python3 scripts/card-recognition/inspect_checkpoint.py",
-    "test:i18n": "node --test tests/i18n.test.mjs"
+    "test:i18n": "node --test tests/i18n.test.mjs",
+    "model:prepare-runtime": "node scripts/card-recognition/prepare-runtime.mjs",
+    "test:yolo26": "node --test tests/yolo26-scanner.test.mjs",
+    "prebuild": "npm run model:prepare-runtime",
+    "test:yolo26:browser": "node scripts/card-recognition/browser-smoke.mjs",
+    "predev": "npm run model:prepare-runtime"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.93.1",
     "next": "16.1.1",
+    "onnxruntime-web": "1.23.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "tesseract.js": "^7.0.0"
@@ -27,6 +33,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "playwright": "1.56.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

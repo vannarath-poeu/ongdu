@@ -1,0 +1,59 @@
+{
+  "architecture": "yolo26n",
+  "mode": "raw",
+  "checkpoint_sha256": "d7f58ee522bdd62e21dbc284e238ae830336728cb2ebd3d47d9911234cb1d14d",
+  "onnx_sha256": "a9e1ad38c1eb5234d9c963396e082b7d8f135923969872834ac517a93bb2bf59",
+  "dataset_sha256": "2cb959085e0a771223c884a7a2f8aedf404074194b889399b4d23e5a12f921c7",
+  "input_shape": [
+    1,
+    3,
+    640,
+    640
+  ],
+  "output_shape": [
+    1,
+    56,
+    8400
+  ],
+  "opset": 17,
+  "parity": {
+    "atol": 0.001,
+    "rtol": 0.001,
+    "confidence": 0.25,
+    "method": "full raw tensor",
+    "images": [
+      {
+        "image": "001934273_jpg.rf.bb75c1e46bcc02e67d1a6bedaf5ef623.jpg",
+        "image_sha256": "c976e316fb0547b1932e65c1548f92eada0215c55b8e68656ae22a0185e82428",
+        "max_abs_error": 0.01043701171875,
+        "ort_inference_ms": 50.902874999337655,
+        "detections": 4
+      },
+      {
+        "image": "002839806_jpg.rf.d186d94c72f77f009495f4f6acf14a34.jpg",
+        "image_sha256": "22b39f7fada596a5ee756ec7c862cc0343304246e5af8709ea455568874610b2",
+        "max_abs_error": 0.0109710693359375,
+        "ort_inference_ms": 45.467917000678426,
+        "detections": 4
+      },
+      {
+        "image": "003096005_jpg.rf.ec904036e8c0b754efb0cdd682845bd4.jpg",
+        "image_sha256": "9e519bf9eb6a0695d57a278acf60e60fd898d975ef15464ae45175b4bab82051",
+        "max_abs_error": 0.006103515625,
+        "ort_inference_ms": 44.86879100022634,
+        "detections": 4
+      }
+    ]
+  },
+  "export_arguments": {
+    "format": "onnx",
+    "imgsz": 640,
+    "batch": 1,
+    "device": "cpu",
+    "half": false,
+    "dynamic": false,
+    "simplify": false,
+    "opset": 17,
+    "nms": null
+  }
+}
