@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "class_count": 52,
+  "joker_training_ready": false,
+  "dataset_source": "https://universe.roboflow.com/augmented-startups/playing-cards-ow27d/dataset/4",
+  "dataset_license": "Public Domain",
+  "dataset_yaml_sha256": "756b07eb3082b3eb039a7fa32e35b54252d7caa68f22ec24cf7a908bfd88a077",
+  "datasets": {
+    "yolo26n": "data/Playing Cards.v4-yolov8n.yolo26",
+    "yolov8n": "data/Playing Cards.v4-fastmodel-resized640-aug3x.yolov8"
+  },
+  "weights": {
+    "yolo26n": "weights/yolo26n.pt",
+    "yolov8n": "weights/playing_cards_model_0_playing-cards-colab.pt"
+  },
+  "output": "artifacts",
+  "training": {
+    "imgsz": 640,
+    "batch": 4,
+    "epochs": 100,
+    "patience": 20,
+    "workers": 0,
+    "seed": 42,
+    "device": "auto"
+  }
+}

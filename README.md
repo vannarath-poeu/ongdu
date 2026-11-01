@@ -176,6 +176,11 @@ release evidence. `npm run test:card-contract` runs the independent contract tes
 `npm run model:inspect -- --help` describes the explicit, hash-checked source inspection.
 No model download or Python execution occurs during the application build.
 
+The separate [model-training Python project](model-training/README.md) contains the
+custom-training plan and local dataset inspection scaffold for YOLO26n/YOLOv8n.
+Its datasets, weights, Python environment, and generated artifacts stay outside the
+web build. No dataset download or API key is required for the supplied local exports.
+
 ### Game length
 
 Quick, Standard, and Longer target roughly 5, 10, and 20 rounds by adjusting each
