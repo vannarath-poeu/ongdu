@@ -10,8 +10,8 @@
     "yolov8n": "data/Playing Cards.v4-fastmodel-resized640-aug3x.yolov8"
   },
   "weights": {
-    "yolo26n": "weights/yolo26n.pt",
-    "yolov8n": "weights/playing_cards_model_0_playing-cards-colab.pt"
+    "yolo26n": "data/yolo26n.pt",
+    "yolov8n": "data/playing_cards_model_0_playing-cards-colab.pt"
   },
   "output": "artifacts",
   "training": {

@@ -15,8 +15,16 @@ def main(argv=None):
     for name in ("inspect", "run") + STAGES:
         command = commands.add_parser(name)
         command.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-        command.add_argument("--model", choices=MODELS + ("all",),
-                             default="all" if name in ("inspect", "run", "compare") else "yolo26n")
+        command.add_argument("--model", choices=("yolov8n",) if name == "evaluate" else MODELS + ("all",),
+                             default="yolov8n" if name == "evaluate" else
+                             "all" if name in ("inspect", "run", "compare") else "yolo26n")
+        if name == "evaluate":
+            command.add_argument("--weights", type=Path)
+            command.add_argument("--split", choices=("val", "test"), default="val")
+            command.add_argument("--device", choices=("cpu", "mps", "0", "auto"), default="cpu")
+            command.add_argument("--batch", type=int, default=4)
+            command.add_argument("--limit", type=int, help="Evaluate the first N sorted images (smoke run only)")
+            command.add_argument("--output", type=Path, help="New report directory, relative to model-training")
         if name == "inspect":
             command.add_argument("--check-labels", action="store_true")
         if name == "run":
@@ -29,11 +37,16 @@ def main(argv=None):
                       for model in selected_models(args.model)]
         elif args.command == "run" and args.dry_run:
             result = execution_plan(root, config, args.model)
+        elif args.command == "evaluate":
+            from .evaluate import evaluate_placeholder
+            result = evaluate_placeholder(root, config, weights=args.weights, split=args.split,
+                                          device=args.device, batch=args.batch, limit=args.limit,
+                                          output=args.output)
         else:
             run_stage(args.command)
             return 0
         print(json.dumps(result, indent=2))
         return 0
-    except (OSError, ValueError, KeyError, NotImplementedError) as error:
+    except (OSError, ValueError, KeyError, RuntimeError, NotImplementedError) as error:
         print("ongdu-training: {}".format(error), file=sys.stderr)
         return 2

@@ -3,9 +3,10 @@
 Standalone Python project for the [end-to-end training plan](card-detector-training-pipeline.md).
 It is independent of npm, Next.js, and the deployed application.
 
-**Current status: scaffold.** Local dataset inspection and execution planning work.
-Training, preparation, export, evaluation, comparison, and packaging have CLI boundaries
-but intentionally return an error until implemented. No model has been trained here.
+**Current status: scaffold plus placeholder evaluation.** Local dataset inspection,
+execution planning, and the pinned YOLOv8n baseline benchmark work. Training, general
+preparation, export, candidate comparison, and packaging remain unimplemented.
+No model has been trained here.
 
 ## Local data
 
@@ -31,21 +32,24 @@ them blindly to a trainer or alter the original data in place.
 
 ## Setup and working commands
 
-Use Python 3.11 or newer. From the repository root:
+Use [uv](https://docs.astral.sh/uv/getting-started/installation/) to manage Python and
+the project environment. uv is already installed on this machine. From the repository root:
 
 ```sh
 cd model-training
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
-ongdu-training inspect
-ongdu-training inspect --check-labels
-ongdu-training run --dry-run
+uv sync --locked
+uv run --locked ongdu-training inspect
+uv run --locked ongdu-training inspect --check-labels
+uv run --locked ongdu-training run --dry-run
 ```
 
-Editable installation resolves setuptools 68+ as build tooling. The scaffold has no
-third-party runtime dependencies and does not install PyTorch or Ultralytics. Package
-installation may need package-index access for build tooling; dataset inspection does not.
+The `.python-version` selects Python 3.11; uv can provision it if needed. `uv.lock`
+locks the project and optional evaluation dependencies. Base setup does not install
+PyTorch or Ultralytics. Python/build tooling setup may need network access; dataset
+inspection does not. No virtual-environment activation is necessary. The environment
+stays in the gitignored `.venv/` directory. To change dependencies intentionally, update
+`pyproject.toml`, run `uv lock`, and retain the updated lockfile.
+
 You can also run directly without installing anything:
 
 ```sh
@@ -70,11 +74,67 @@ The CLI reserves `prepare`, `train`, `export`, `evaluate`, `compare`, `package`,
 Calling an unfinished stage exits with status 2, rather than pretending a model was built.
 Implement them in the order described in the plan, with verified and locked ML dependencies.
 
+## Benchmark the placeholder model
+
+Install the locked evaluation dependencies and run against the local checkpoint:
+
+```sh
+cd model-training
+uv sync --locked --extra eval
+uv run --locked --extra eval ongdu-training evaluate
+```
+
+Keep `--extra eval` on evaluation commands so uv retains the optional ML dependencies
+when synchronizing. For a first Apple Silicon check, add `--device mps --limit 20`;
+remove `--limit 20` for the full validation split. Use `--device cpu` if MPS is unavailable.
+
+The eval extra pins Ultralytics 8.3.240, PyTorch 2.8.0, and torchvision 0.23.0 for the
+existing checkpoint. It is separate from future YOLO26 training tooling and never
+installed by npm or the web build. Package installation needs package-index access;
+evaluation uses local data and weights without downloading a model or dataset.
+
+The verified placeholder checkpoint is at
+`data/playing_cards_model_0_playing-cards-colab.pt` (gitignored), so no `--weights`
+argument is needed. On another checkout, supply this file locally or use
+`--weights /local/path/model.pt`. The evaluator verifies its SHA-256
+against `../models/card-recognition/source-inspection.json`, then checks class order.
+Other weights are intentionally rejected by this baseline-only command.
+
+```sh
+# Fast smoke check; sorted first 20 images, not a representative benchmark:
+uv run --locked --extra eval ongdu-training evaluate --limit 20
+
+# Full validation split (2,020 images); CPU is the default:
+uv run --locked --extra eval ongdu-training evaluate --device mps --batch 4
+
+# Reserved test split (1,010 images), for a final benchmark after settings are frozen:
+uv run --locked --extra eval ongdu-training evaluate --split test --output artifacts/evaluations/placeholder-test
+```
+
+Each run creates a new directory under `artifacts/evaluations/`, with `report.json`,
+an image/label hash manifest, normalized dataset paths, and Ultralytics validation plots
+(including precision-recall curves and confusion matrices). An existing output directory
+is never overwritten. Original images and labels are referenced through a local symlink
+view so validator caches stay in the run directory. This requires symlink support.
+An additional `metrics.json` snapshot is saved at validation completion, before final
+report assembly, so metrics survive a later reporting error.
+
+The JSON includes **precision, recall, mAP50, mAP50–95, per-class metrics, image/box
+counts, timing, checkpoint provenance, runtime versions, and evaluation settings**.
+Classes absent from evaluated ground truth have null per-class metrics. Scores are
+fractions from 0 to 1. Precision/recall use the validator's max-F1 operating point;
+`conf=0.001` is the candidate floor for AP calculation, not a suggested app threshold.
+
+These measure **annotated box detection**, not exact 9/10-card hand accuracy or physical
+card counting. The original training split is unconfirmed and may overlap this source.
+There are no joker labels, and Python timing does not establish browser performance.
+Use validation data for tuning and preserve the test split for the final comparison.
+
 Future training uses these local files, excluded from Git:
 
 ```text
-weights/yolo26n.pt
-weights/playing_cards_model_0_playing-cards-colab.pt
+data/yolo26n.pt
+data/playing_cards_model_0_playing-cards-colab.pt
 ```
 
 Missing files must fail before model construction; no implicit weight downloads are allowed.

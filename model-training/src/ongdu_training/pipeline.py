@@ -103,7 +103,7 @@ def execution_plan(root, config, model="all"):
             "weights_present": weights.is_file(),
             "export_modes": ["raw", "nms-free"] if name == "yolo26n" else ["raw"],
         })
-    return {"status": "scaffold-only", "implemented": ["inspect", "run --dry-run"],
+    return {"status": "scaffold-only", "implemented": ["inspect", "evaluate (pinned placeholder only)", "run --dry-run"],
             "pending_stages": list(STAGES), "network_required": False,
             "class_count": config["class_count"],
             "joker_training_ready": config["joker_training_ready"],
@@ -114,6 +114,6 @@ def execution_plan(root, config, model="all"):
 def run_stage(stage):
     """Fail closed until real stage implementations and acceptance checks exist."""
     raise NotImplementedError(
-        "{} is not implemented in this scaffold. Use inspect or run --dry-run; "
+        "{} is not implemented in this scaffold. Use inspect, evaluate, or run --dry-run; "
         "see card-detector-training-pipeline.md for the implementation plan.".format(stage)
     )
