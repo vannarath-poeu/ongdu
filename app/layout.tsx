@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
-import { Outfit, JetBrains_Mono } from "next/font/google";
+import { Outfit, JetBrains_Mono, Noto_Sans_Khmer } from "next/font/google";
 import "./globals.css";
+import { LocaleProvider } from "@/lib/i18n/context";
+
+const khmer = Noto_Sans_Khmer({
+  variable: "--font-khmer",
+  subsets: ["khmer", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -15,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ongdu - Casual Poker Card Game",
-  description: "A strategic 3-layer card game based on Casual Poker. Arrange your cards wisely!",
+  title: "ONGDU — ល្បែងបៀ 3 ជួរ",
+  description: "លេង ONGDU៖ រៀបបៀ 9 សន្លឹកជា 3 ជួរ ទល់នឹង AI។ គាំទ្រភាសាខ្មែរ និង English។",
   keywords: ["card game", "poker", "chinese poker", "strategy game", "multiplayer"],
 };
 
@@ -26,11 +34,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="km">
       <body
-        className={`${outfit.variable} ${jetbrainsMono.variable} antialiased font-sans`}
+        className={`${outfit.variable} ${jetbrainsMono.variable} ${khmer.variable} antialiased font-sans`}
       >
-        {children}
+        <LocaleProvider>{children}</LocaleProvider>
       </body>
     </html>
   );

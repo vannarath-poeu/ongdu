@@ -1,27 +1,30 @@
 'use client';
 
+import { errorMessages, type UIErrorCode } from '@/lib/i18n/errors';
+import { useLocale } from '@/lib/i18n/context';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Card } from '@/lib/types';
 import CardPhotoRecognition from '@/components/CardPhotoRecognition';
 
 type CameraState = 'idle' | 'opening' | 'streaming' | 'captured' | 'error';
 
-function getCameraError(error: unknown): string {
+function getCameraError(error: unknown): UIErrorCode {
   if (error instanceof DOMException) {
     if (error.name === 'NotAllowedError' || error.name === 'SecurityError') {
-      return 'Camera permission was denied. Allow camera access in your browser settings, then try again.';
+      return 'CAMERA_DENIED';
     }
 
     if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-      return 'No camera was found on this device.';
+      return 'CAMERA_MISSING';
     }
 
     if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-      return 'The camera is already in use or could not be started.';
+      return 'CAMERA_BUSY';
     }
   }
 
-  return 'The camera could not be opened. Check your browser permissions and try again.';
+  return 'CAMERA_OPEN';
 }
 
 interface Props {
@@ -32,13 +35,14 @@ interface Props {
 }
 
 export default function CardCameraCapture({ active = true, onUseCards, onActiveChange, onManualEntry }: Props) {
+  const { t, message } = useLocale();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const cameraRequestRef = useRef(0);
   const [cameraState, setCameraState] = useState<CameraState>('idle');
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<UIErrorCode | null>(null);
 
   const stopCamera = useCallback(() => {
     cameraRequestRef.current += 1;
@@ -75,7 +79,7 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
     stopCamera();
     setCapturedImage(null);
     if (!file.type.startsWith('image/')) {
-      setErrorMessage('Please choose an image from your photo library.');
+      setErrorMessage('PHOTO_TYPE');
       setCameraState('error');
       return;
     }
@@ -87,11 +91,11 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
 
   const uploadControl = (
     <label className={`relative cursor-pointer rounded-xl px-5 py-3.5 text-center font-semibold transition-colors focus-within:ring-2 focus-within:ring-indigo-400 ${cameraState === 'idle' ? 'block w-full bg-amber-400 text-slate-950 hover:bg-amber-300' : 'text-sm text-indigo-300 hover:bg-slate-800'}`}>
-      {cameraState === 'idle' ? 'Upload a photo' : 'Choose another photo'}
+      {cameraState === 'idle' ? t("Upload a photo") : t("Choose another photo")}
       <input
         type="file"
         accept="image/*"
-        aria-label="Upload photo from library"
+        aria-label={t("Upload photo from library")}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         onChange={(event) => {
           uploadPhoto(event.target.files?.[0]);
@@ -110,7 +114,7 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
     setCameraState('opening');
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setErrorMessage('Camera access is not supported by this browser. Try a current browser on a secure connection.');
+      setErrorMessage('CAMERA_UNSUPPORTED');
       setCameraState('error');
       return;
     }
@@ -142,7 +146,7 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
   const capturePhoto = () => {
     const video = videoRef.current;
     if (!video || !isVideoReady || video.videoWidth === 0 || video.videoHeight === 0) {
-      setErrorMessage('The camera is still loading. Wait a moment and try again.');
+      setErrorMessage('CAMERA_LOADING');
       return;
     }
 
@@ -152,7 +156,7 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
     const context = canvas.getContext('2d');
 
     if (!context) {
-      setErrorMessage('The photo could not be captured. Please try again.');
+      setErrorMessage('PHOTO_CAPTURE');
       return;
     }
 
@@ -179,29 +183,27 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
           <rect x="43" y="8" width="45" height="65" rx="7" transform="rotate(14 43 8)" fill="#f8fafc" />
           <path d="M65 29c-7-9-15 0-8 7l8 8 8-8c7-7-1-16-8-7Z" fill="#e11d48" />
         </svg>
-        <h2 className="text-xl font-semibold text-white">Start with your cards</h2>
-        <p className="mx-auto mt-2 mb-6 max-w-xs text-sm leading-relaxed text-slate-400">Upload a photo of your hand. We’ll read the cards and help you arrange them.</p>
+        <h2 className="text-xl font-semibold text-white">{t("Start with your cards")}</h2>
+        <p className="mx-auto mt-2 mb-6 max-w-xs text-sm leading-relaxed text-slate-400">{t("Upload a photo of your hand. We’ll read the cards and help you arrange them.")}</p>
         {uploadControl}
-        <button type="button" onClick={openCamera} className="mt-3 w-full rounded-xl border border-slate-600 py-3.5 font-medium text-slate-200 transition-colors hover:bg-slate-800">Take a photo</button>
-        <p className="mt-5 text-xs text-slate-500">9 cards, or 10 if you need a discard. Photos stay on your device.</p>
+        <button type="button" onClick={openCamera} className="mt-3 w-full rounded-xl border border-slate-600 py-3.5 font-medium text-slate-200 transition-colors hover:bg-slate-800">{t("Take a photo")}</button>
+        <p className="mt-5 text-xs text-slate-500">{t("9 cards, or 10 if you need a discard. Photos stay on your device.")}</p>
       </div>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-slate-700/50 bg-slate-900/70 p-4 sm:p-5 space-y-4" aria-label="Read your cards">
+    <section className="rounded-2xl border border-slate-700/50 bg-slate-900/70 p-4 sm:p-5 space-y-4" aria-label={t("Read your cards")}>
       {cameraState !== 'captured' && <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-white">Show us your hand</h3>
-          <p className="text-sm text-slate-400 mt-1">Keep every rank and suit in view.</p>
+          <h3 className="text-lg font-semibold text-white">{t("Show us your hand")}</h3>
+          <p className="text-sm text-slate-400 mt-1">{t("Keep every rank and suit in view.")}</p>
         </div>
         <button
           type="button"
           onClick={clearPhoto}
           className="text-xs text-slate-400 hover:text-white transition-colors"
-        >
-          Back
-        </button>
+        >{t("Back")}</button>
       </div>}
 
       {(cameraState === 'opening' || cameraState === 'streaming') && (
@@ -214,26 +216,24 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
               playsInline
               onCanPlay={() => setIsVideoReady(true)}
               className="w-full h-full object-cover"
-              aria-label="Camera preview"
+              aria-label={t("Camera preview")}
             />
             {(cameraState === 'opening' || !isVideoReady) && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/80 text-slate-300">
                 <div className="w-7 h-7 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm">Opening camera...</span>
+                <span className="text-sm">{t("Opening camera...")}</span>
               </div>
             )}
           </div>
 
-          {errorMessage && <p className="text-sm text-rose-300" role="alert">{errorMessage}</p>}
+          {errorMessage && <p className="text-sm text-rose-300" role="alert">{message(errorMessages[errorMessage])}</p>}
 
           <button
             type="button"
             onClick={capturePhoto}
             disabled={!isVideoReady}
             className="w-full py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold hover:from-indigo-400 hover:to-purple-400 transition-all disabled:opacity-50 disabled:cursor-wait"
-          >
-            Use this photo
-          </button>
+          >{t("Use this photo")}</button>
         </div>
       )}
 
@@ -243,7 +243,7 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
             onManualEntry={onManualEntry ? () => { clearPhoto(); onManualEntry(); } : undefined}
             onImageError={() => {
               setCapturedImage(null);
-              setErrorMessage('This photo could not be opened. Try a JPEG, PNG, or another browser-supported image.');
+              setErrorMessage('PHOTO_OPEN');
               setCameraState('error');
             }}
           >
@@ -253,24 +253,20 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
               type="button"
               onClick={clearPhoto}
               className="px-3 py-3 text-sm text-slate-400 hover:text-white"
-            >
-              Start over
-            </button>
+            >{t("Start over")}</button>
           </div>
           </CardPhotoRecognition>
         </div>
       )}
 
-      {cameraState === 'error' && (
+      {cameraState === 'error' && errorMessage && (
         <div className="rounded-lg border border-rose-700/50 bg-rose-900/20 p-4 space-y-3" role="alert">
-          <p className="text-sm text-rose-200">{errorMessage}</p>
+          <p className="text-sm text-rose-200">{message(errorMessages[errorMessage])}</p>
           <button
             type="button"
             onClick={openCamera}
             className="w-full py-2.5 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-200 font-medium hover:bg-rose-500/30 transition-colors"
-          >
-            Try Again
-          </button>
+          >{t("Try Again")}</button>
         </div>
       )}
       {cameraState !== 'captured' && uploadControl}

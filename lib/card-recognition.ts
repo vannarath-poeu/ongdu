@@ -1,3 +1,4 @@
+import { msg, formatMessage, type Message } from './i18n/message.ts';
 import type { Card, Rank, Suit } from './types.ts';
 import { recognizeCardCorners } from './card-corner-recognition.ts';
 
@@ -56,23 +57,29 @@ export function findCardRegions(pixels: Uint8ClampedArray, width: number, height
   return rows.flatMap(row => row.sort((a, b) => a.x - b.x));
 }
 
-export function validateDetectedCards(cards: Pick<DetectedCard, 'rank' | 'suit'>[]): string | null {
-  if (cards.length !== 9 && cards.length !== 10) return 'Review exactly 9 or 10 cards before using this hand.';
+export function validateDetectedCardsMessage(cards: Pick<DetectedCard, 'rank' | 'suit'>[]): Message | null {
+  if (cards.length !== 9 && cards.length !== 10) return msg('Review exactly 9 or 10 cards before using this hand.');
   const seen = new Set<string>();
   let wilds = 0;
   for (const card of cards) {
     if (card.rank === 'WILD') {
-      if (++wilds > 3) return 'Maximum 3 wildcards allowed.';
+      if (++wilds > 3) return msg('Maximum 3 wildcards allowed.');
       continue;
     }
     if (!card.rank || !SCAN_RANKS.includes(card.rank) || !['hearts', 'diamonds', 'clubs', 'spades'].includes(card.suit)) {
-      return 'Choose a rank and suit for every card.';
+      return msg('Choose a rank and suit for every card.');
     }
     const key = `${card.rank}-${card.suit}`;
-    if (seen.has(key)) return `Duplicate card: ${card.rank} of ${card.suit}. Correct or remove it.`;
+    if (seen.has(key)) return msg('duplicateCard', { card: `${card.rank}${({ hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠', '': '' } as const)[card.suit]}` });
     seen.add(key);
   }
   return null;
+}
+
+// Preserve the English validation contract for existing Node tooling.
+export function validateDetectedCards(cards: Pick<DetectedCard, 'rank' | 'suit'>[]): string | null {
+  const error = validateDetectedCardsMessage(cards);
+  return error ? formatMessage('en', error) : null;
 }
 
 export function detectedCardsToHand(cards: DetectedCard[]): Card[] {

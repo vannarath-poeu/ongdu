@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { detectedCardsToHand, findCardRegions, recognizeCardPhoto, validateDetectedCards } from '../lib/card-recognition.ts';
+import { detectedCardsToHand, findCardRegions, recognizeCardPhoto, validateDetectedCards, validateDetectedCardsMessage } from '../lib/card-recognition.ts';
+import { formatMessage } from '../lib/i18n/message.ts';
 import { findInkComponents, pairCornerSymbols } from '../lib/card-corner-recognition.ts';
 
 const validHand = () => ['2', '3', '4', '5', '6', '7', '8', '9', '10'].map(rank => ({ rank, suit: 'hearts', preview: '', uncertain: false }));
@@ -89,4 +90,16 @@ test('more than ten detections must be reduced to a legal helper hand', () => {
   cards.push(...['J', 'Q', 'K', 'A'].map(rank => ({ rank, suit: 'spades', preview: '', uncertain: false })));
   assert.match(validateDetectedCards(cards), /exactly 9 or 10/);
   assert.equal(validateDetectedCards(cards.slice(0, 10)), null);
+});
+
+test('structured photo validation can switch languages after an error occurs', () => {
+  const invalid = validHand().slice(0, 8);
+  const descriptor = validateDetectedCardsMessage(invalid);
+  assert.equal(formatMessage('en', descriptor), validateDetectedCards(invalid));
+  assert.match(formatMessage('km', descriptor), /[\u1780-\u17ff]/);
+  const duplicate = validHand();
+  duplicate[0] = { ...duplicate[1] };
+  const error = validateDetectedCardsMessage(duplicate);
+  assert.equal(error.key, 'duplicateCard');
+  assert.match(formatMessage('km', error), /3♥/);
 });

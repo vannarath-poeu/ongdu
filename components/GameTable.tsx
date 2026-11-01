@@ -1,5 +1,9 @@
 'use client';
 
+import LanguageSwitch from '@/components/LanguageSwitch';
+import { layerLabels, phaseLabels } from '@/lib/i18n/core';
+import { useLocale } from '@/lib/i18n/context';
+
 import { useState } from 'react';
 import { Player, GamePhase, PlayerArrangement, Card as CardType } from '@/lib/types';
 import { evaluateHand } from '@/lib/game-logic';
@@ -27,6 +31,7 @@ export default function GameTable({
   onQuit,
   waitingForAI,
 }: GameTableProps) {
+  const { t, handLabel, cardLabel, playerLabel, number } = useLocale();
   const [selectedDiscardCard, setSelectedDiscardCard] = useState<CardType | null>(null);
   const [showQuitDialog, setShowQuitDialog] = useState(false);
   const humanPlayer = players.find(p => p.isHuman);
@@ -60,8 +65,8 @@ export default function GameTable({
           flex items-center gap-2
         `}>
           <div className={`w-2 h-2 rounded-full ${isReady ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-          <span className="text-sm font-medium text-slate-200">{player.name}</span>
-          <span className="text-xs text-emerald-400 font-mono">${player.cash}</span>
+          <span className="text-sm font-medium text-slate-200">{playerLabel(player)}</span>
+          <span className="text-xs text-emerald-400 font-mono">${number(player.cash)}</span>
           {startingPlayerIndex === players.indexOf(player) && (
             <span className="text-amber-400 text-xs">⭐</span>
           )}
@@ -118,10 +123,8 @@ export default function GameTable({
           
           {/* Dialog */}
           <div className="relative bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
-            <h3 className="text-xl font-bold text-slate-100 mb-2">Quit Game?</h3>
-            <p className="text-slate-400 mb-6">
-              Are you sure you want to quit? Your current game progress will be lost.
-            </p>
+            <h3 className="text-xl font-bold text-slate-100 mb-2">{t("Quit Game?")}</h3>
+            <p className="text-slate-400 mb-6">{t("Are you sure you want to quit? Your current game progress will be lost.")}</p>
             
             <div className="flex gap-3">
               <button
@@ -129,9 +132,7 @@ export default function GameTable({
                 className="flex-1 py-2.5 px-4 rounded-lg font-medium
                   bg-slate-700 text-slate-300 
                   hover:bg-slate-600 transition-colors"
-              >
-                Cancel
-              </button>
+              >{t("Cancel")}</button>
               <button
                 onClick={() => {
                   setShowQuitDialog(false);
@@ -140,35 +141,33 @@ export default function GameTable({
                 className="flex-1 py-2.5 px-4 rounded-lg font-medium
                   bg-gradient-to-r from-rose-500 to-red-500 text-white
                   hover:from-rose-400 hover:to-red-400 transition-colors"
-              >
-                Quit Game
-              </button>
+              >{t("Quit Game")}</button>
             </div>
           </div>
         </div>
       )}
 
       {/* Compact Header */}
-      <div className="relative z-10 flex items-center justify-between px-4 py-2 border-b border-slate-800/50">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-4 py-2 border-b border-slate-800/50">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowQuitDialog(true)}
-            className="text-lg font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent hover:from-amber-300 hover:to-orange-300 transition-all"
+            className="brand-wordmark text-lg font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent hover:from-amber-300 hover:to-orange-300 transition-all"
           >
             ONGDU
           </button>
-          <span className="px-2 py-0.5 rounded bg-slate-800/50 text-slate-400 text-xs">
-            R{currentRound}
+          <span className="px-2 py-0.5 rounded bg-slate-800/50 text-slate-400 text-xs">{t('roundNumber', { count: currentRound })}
           </span>
           <span className="text-emerald-400 text-xs font-medium capitalize">
-            {phase === 'arrangement' ? 'Arrange' : phase}
+            {t(phaseLabels[phase])}
           </span>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <LanguageSwitch />
           {/* Compact opponents display during arrangement */}
           {isArrangementPhase && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {aiPlayers.map((player) => (
                 <div
                   key={player.id}
@@ -181,7 +180,7 @@ export default function GameTable({
                   `}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${player.isReady ? 'bg-emerald-400' : 'bg-slate-500'}`} />
-                  <span className="text-slate-300">{player.name}</span>
+                  <span className="text-slate-300">{playerLabel(player)}</span>
                   {startingPlayerIndex === players.indexOf(player) && (
                     <span className="text-amber-400">⭐</span>
                   )}
@@ -193,14 +192,14 @@ export default function GameTable({
           {/* Player cash */}
           {humanPlayer && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-800/50 border border-slate-700/40">
-              <span className="text-emerald-400 font-mono text-sm font-bold">${humanPlayer.cash}</span>
+              <span className="text-emerald-400 font-mono text-sm font-bold">${number(humanPlayer.cash)}</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Game Table Area */}
-      <div className="relative z-10 h-[calc(100vh-48px)] flex flex-col">
+      <div className="relative z-10 flex min-h-[calc(100dvh-100px)] flex-col">
         {/* Opponents Area - only show expanded during reveal/scoring */}
         {!isArrangementPhase && (
           <div className="relative h-1/3 min-h-[180px]">
@@ -214,7 +213,7 @@ export default function GameTable({
             <div className="bg-slate-800/70 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-700/50">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-slate-300 text-sm">AI arranging cards...</span>
+                <span className="text-slate-300 text-sm">{t("AI arranging cards...")}</span>
               </div>
             </div>
           </div>
@@ -228,10 +227,8 @@ export default function GameTable({
               {/* Discard phase - 6 player only, starting player discards 1 card */}
               {phase === 'discard' && isHumanStartingPlayer && (
                 <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700/30">
-                  <h3 className="text-lg font-bold text-amber-400 mb-2">Discard Phase</h3>
-                  <p className="text-slate-400 mb-4">
-                    As the starting player, you must discard 1 card from your hand of 10.
-                  </p>
+                  <h3 className="text-lg font-bold text-amber-400 mb-2">{t("Discard Phase")}</h3>
+                  <p className="text-slate-400 mb-4">{t("As the starting player, you must discard 1 card from your hand of 10.")}</p>
                   
                   {/* Show all 10 cards */}
                   <div className="flex flex-wrap gap-2 justify-center mb-4">
@@ -268,8 +265,8 @@ export default function GameTable({
                     `}
                   >
                     {selectedDiscardCard 
-                      ? `Discard ${selectedDiscardCard.isWild ? 'Wild' : `${selectedDiscardCard.rank} of ${selectedDiscardCard.suit}`}`
-                      : 'Select a card to discard'
+                      ? t('discardCard', { card: cardLabel(selectedDiscardCard) })
+                      : t("Select a card to discard")
                     }
                   </button>
                 </div>
@@ -281,8 +278,8 @@ export default function GameTable({
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
                     <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
                   </div>
-                  <h3 className="text-xl font-bold text-amber-400 mb-2">Discard Phase</h3>
-                  <p className="text-slate-400">{startingPlayer?.name} is discarding a card...</p>
+                  <h3 className="text-xl font-bold text-amber-400 mb-2">{t("Discard Phase")}</h3>
+                  <p className="text-slate-400">{t('discarding', { name: startingPlayer ? playerLabel(startingPlayer) : '' })}</p>
                 </div>
               )}
 
@@ -301,30 +298,30 @@ export default function GameTable({
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
                     <span className="text-3xl">✓</span>
                   </div>
-                  <h3 className="text-xl font-bold text-emerald-400 mb-2">Ready!</h3>
-                  <p className="text-slate-400">Waiting for other players to finish...</p>
+                  <h3 className="text-xl font-bold text-emerald-400 mb-2">{t("Ready!")}</h3>
+                  <p className="text-slate-400">{t("Waiting for other players to finish...")}</p>
                 </div>
               )}
 
               {/* Reveal phase - show your cards */}
               {(phase === 'reveal' || phase === 'scoring') && humanPlayer.arrangement && (
                 <div className="bg-slate-800/40 rounded-xl p-6 border border-slate-700/30">
-                  <h3 className="text-lg font-bold text-slate-200 mb-4">Your Arrangement</h3>
+                  <h3 className="text-lg font-bold text-slate-200 mb-4">{t("Your Arrangement")}</h3>
                   <div className="space-y-3">
                     {(['top', 'middle', 'bottom'] as const).map((layer) => {
                       const cards = humanPlayer.arrangement![layer].cards.filter(c => c !== null);
                       const evaluation = cards.length === 3 ? evaluateHand(cards) : null;
 
                       return (
-                        <div key={layer} className="flex items-center gap-4">
-                          <span className="text-xs text-slate-500 w-12 uppercase">{layer}</span>
+                        <div key={layer} className="flex flex-wrap items-center gap-3">
+                          <span className="text-xs text-slate-500 w-12 uppercase">{t(layerLabels[layer])}</span>
                           <div className="flex gap-2">
                             {humanPlayer.arrangement![layer].cards.map((card, idx) => (
                               <Card key={`${layer}-${idx}`} card={card} size="md" />
                             ))}
                           </div>
                           {evaluation && (
-                            <span className="text-sm text-slate-400">{evaluation.description}</span>
+                            <span className="text-sm text-slate-400">{handLabel(evaluation, cards)}</span>
                           )}
                         </div>
                       );

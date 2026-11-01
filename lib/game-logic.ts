@@ -11,6 +11,7 @@ import {
   MatchupResult,
   LayerComparison,
   RoundScore,
+  SpecialHandId,
 } from './types';
 
 const SUITS: Suit[] = ['hearts', 'diamonds', 'clubs', 'spades'];
@@ -618,20 +619,20 @@ export function checkAutoWin(player: Player): boolean {
 }
 
 // Check for special bonuses and return details
-export function checkBonuses(player: Player): { hasBonus: boolean; bonusType: string | null; isSpecialHand: boolean } {
-  if (!player.arrangement) return { hasBonus: false, bonusType: null, isSpecialHand: false };
+export function checkBonuses(player: Player): { hasBonus: boolean; bonusType: string | null; specialHandId: SpecialHandId | null; isSpecialHand: boolean } {
+  if (!player.arrangement) return { hasBonus: false, bonusType: null, specialHandId: null, isSpecialHand: false };
   
   // Check for all nines (all layers = 9 without wildcards)
   if (checkAllNines(player)) {
-    return { hasBonus: true, bonusType: 'All Nines - Special Hand!', isSpecialHand: true };
+    return { hasBonus: true, bonusType: 'All Nines - Special Hand!', specialHandId: 'all-nines', isSpecialHand: true };
   }
   
   // Check for 4 of a kind across all cards
   if (checkFourOfAKind(player)) {
-    return { hasBonus: true, bonusType: 'Four of a Kind - Special Hand!', isSpecialHand: true };
+    return { hasBonus: true, bonusType: 'Four of a Kind - Special Hand!', specialHandId: 'four-of-a-kind', isSpecialHand: true };
   }
   
-  return { hasBonus: false, bonusType: null, isSpecialHand: false };
+  return { hasBonus: false, bonusType: null, specialHandId: null, isSpecialHand: false };
 }
 
 // Find winner (richest player)

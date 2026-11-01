@@ -1,5 +1,7 @@
 'use client';
 
+import { useLocale } from '@/lib/i18n/context';
+
 import { Card as CardType } from '@/lib/types';
 
 interface CardProps {
@@ -42,13 +44,19 @@ export default function Card({
   size = 'md',
   faceDown = false 
 }: CardProps) {
+  const { t, cardLabel } = useLocale();
   if (!card) {
     // Empty slot
     return (
       <div
-        onClick={onClick}
+        onClick={isDisabled ? undefined : onClick}
+        role={onClick ? "button" : undefined}
+        tabIndex={onClick && !isDisabled ? 0 : undefined}
+        aria-disabled={onClick ? isDisabled : undefined}
+        aria-label={t("emptySlot")}
+        onKeyDown={event => { if (!isDisabled && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onClick?.(); } }}
         className={`
-          ${sizeClasses[size]}
+          card-face ${sizeClasses[size]}
           rounded-lg border-2 border-dashed border-slate-400/50
           bg-slate-800/30 backdrop-blur-sm
           flex items-center justify-center
@@ -64,8 +72,9 @@ export default function Card({
   if (faceDown) {
     return (
       <div
+        role="img" aria-label={t("faceDown")}
         className={`
-          ${sizeClasses[size]}
+          card-face ${sizeClasses[size]}
           rounded-lg
           bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900
           border-2 border-indigo-600
@@ -89,9 +98,14 @@ export default function Card({
 
   return (
     <div
-      onClick={onClick}
+      onClick={isDisabled ? undefined : onClick}
+      role={onClick ? "button" : "img"}
+      tabIndex={onClick && !isDisabled ? 0 : undefined}
+      aria-disabled={onClick ? isDisabled : undefined}
+      aria-label={cardLabel(card)}
+      onKeyDown={event => { if (!isDisabled && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onClick?.(); } }}
       className={`
-        ${sizeClasses[size]}
+        card-face ${sizeClasses[size]}
         rounded-lg
         bg-gradient-to-br from-slate-50 to-slate-100
         border-2 transition-all duration-200

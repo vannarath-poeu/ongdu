@@ -1,4 +1,5 @@
 import { Card, PlayerArrangement, Player, RoundScore, AIDifficulty } from './types';
+import type { UIErrorCode } from './i18n/errors';
 import { supabase, getSessionId } from './supabase';
 
 export interface AIFeedback {
@@ -18,10 +19,10 @@ export interface AIFeedbackRow extends AIFeedback {
   session_id: string;
 }
 
-export async function submitFeedback(feedback: AIFeedback): Promise<{ success: boolean; id?: string; error?: string }> {
+export async function submitFeedback(feedback: AIFeedback): Promise<{ success: boolean; id?: string; error?: string; errorCode?: UIErrorCode }> {
   if (!supabase) {
     console.error('Supabase not configured');
-    return { success: false, error: 'Supabase not configured' };
+    return { success: false, error: 'Supabase not configured', errorCode: 'FEEDBACK_UNAVAILABLE' };
   }
 
   const sessionId = getSessionId();
@@ -37,7 +38,7 @@ export async function submitFeedback(feedback: AIFeedback): Promise<{ success: b
 
   if (error) {
     console.error('Failed to submit feedback:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, errorCode: 'FEEDBACK_FAILED' };
   }
 
   return { success: true, id: data.id };

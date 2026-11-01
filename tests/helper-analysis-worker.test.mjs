@@ -66,6 +66,7 @@ test('invalid input produces a recoverable response, and the worker can accept a
     const invalid = await request(worker, { id: 20, cards: hand(8), opponents: 1 });
     assert.equal(invalid.id, 20);
     assert.match(invalid.error, /9 or 10/);
+    assert.equal(invalid.errorCode, 'HAND_SIZE');
     const retry = await request(worker, { id: 21, cards: hand(9), opponents: 1 });
     assert.equal(retry.id, 21);
     assert.ok(retry.results.length);

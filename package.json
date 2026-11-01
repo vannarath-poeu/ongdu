@@ -9,7 +9,8 @@
     "lint": "eslint",
     "experiment": "npx tsx scripts/experiment.ts",
     "test:card-contract": "node --test tests/card-detector-contract.test.mjs",
-    "model:inspect": "python3 scripts/card-recognition/inspect_checkpoint.py"
+    "model:inspect": "python3 scripts/card-recognition/inspect_checkpoint.py",
+    "test:i18n": "node --test tests/i18n.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.93.1",

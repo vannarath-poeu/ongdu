@@ -1,6 +1,6 @@
 export type GameLength = 'quick' | 'standard' | 'longer';
 
-export const GAME_LENGTH_OPTIONS: { value: GameLength; label: string; rounds: number }[] = [
+export const GAME_LENGTH_OPTIONS: { value: GameLength; label: 'Quick' | 'Standard' | 'Longer'; rounds: number }[] = [
   { value: 'quick', label: 'Quick', rounds: 5 },
   { value: 'standard', label: 'Standard', rounds: 10 },
   { value: 'longer', label: 'Longer', rounds: 20 },

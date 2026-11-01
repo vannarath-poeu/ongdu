@@ -95,3 +95,5 @@ export interface MatchupResult {
   player2Foul: boolean;
 }
 
+
+export type SpecialHandId = 'all-nines' | 'four-of-a-kind';

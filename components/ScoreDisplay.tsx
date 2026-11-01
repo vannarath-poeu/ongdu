@@ -1,8 +1,11 @@
 'use client';
 
+import LanguageSwitch from '@/components/LanguageSwitch';
+import { useLocale } from '@/lib/i18n/context';
+
 import { useState } from 'react';
 import { Player, RoundScore, PlayerArrangement, AIDifficulty } from '@/lib/types';
-import { evaluateHand, checkAllNines, checkFourOfAKind, validateArrangement } from '@/lib/game-logic';
+import { evaluateHand, checkBonuses, validateArrangement } from '@/lib/game-logic';
 import Card from './Card';
 import FeedbackModal from './FeedbackModal';
 
@@ -16,6 +19,7 @@ interface ScoreDisplayProps {
 }
 
 export default function ScoreDisplay({ players, roundScores, onContinue, isGameOver, currentRound, aiDifficulty }: ScoreDisplayProps) {
+  const { t, handLabel, playerLabel, number } = useLocale();
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const humanPlayer = players.find(p => p.isHuman);
 
@@ -28,14 +32,13 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
     const isFoul = !validateArrangement(player.arrangement);
     if (isFoul) return { isSpecialHand: false, specialHandType: null, isFoul: true };
     
-    const isAllNines = checkAllNines(player);
-    const isFourOfAKind = checkFourOfAKind(player);
+    const { specialHandId } = checkBonuses(player);
     
-    if (isAllNines) {
-      return { isSpecialHand: true, specialHandType: 'All Nines', isFoul: false };
+    if (specialHandId === 'all-nines') {
+      return { isSpecialHand: true, specialHandType: t("All Nines"), isFoul: false };
     }
-    if (isFourOfAKind) {
-      return { isSpecialHand: true, specialHandType: 'Four of a Kind', isFoul: false };
+    if (specialHandId === 'four-of-a-kind') {
+      return { isSpecialHand: true, specialHandType: t("Four of a Kind"), isFoul: false };
     }
     
     return { isSpecialHand: false, specialHandType: null, isFoul: false };
@@ -45,9 +48,9 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
     if (!arrangement) return null;
 
     const layers: Array<{ key: 'top' | 'middle' | 'bottom'; label: string }> = [
-      { key: 'top', label: 'Top' },
-      { key: 'middle', label: 'Mid' },
-      { key: 'bottom', label: 'Bot' },
+      { key: 'top', label: t("Top") },
+      { key: 'middle', label: t("Mid") },
+      { key: 'bottom', label: t("Bot") },
     ];
 
     return (
@@ -57,8 +60,8 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
           const evaluation = cards.length === 3 ? evaluateHand(cards) : null;
 
           return (
-            <div key={key} className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 w-8">{label}</span>
+            <div key={key} className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-slate-500 min-w-12">{label}</span>
               <div className="flex gap-1">
                 {arrangement[key].cards.map((card, idx) => (
                   <Card
@@ -70,7 +73,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
               </div>
               {evaluation && (
                 <span className="text-xs text-slate-400 ml-2">
-                  {evaluation.description}
+                  {handLabel(evaluation, cards)}
                 </span>
               )}
             </div>
@@ -89,13 +92,14 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto py-8 space-y-8">
+        <div className="flex justify-end"><LanguageSwitch /></div>
         {/* Header */}
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-            {isGameOver ? 'Game Over!' : 'Round Complete'}
+            {isGameOver ? t("Game Over!") : t("Round Complete")}
           </h2>
           <p className="text-slate-400">
-            {isGameOver ? 'Final standings' : 'Results from this round'}
+            {isGameOver ? t("Final standings") : t("Results from this round")}
           </p>
         </div>
 
@@ -123,7 +127,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
                   }
                 `}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
                   {/* Player Info */}
                   <div className="flex items-center gap-4">
                     <div className={`
@@ -141,21 +145,20 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
                     </div>
                     <div>
                       <h3 className={`font-bold text-lg ${player.isHuman ? 'text-amber-400' : 'text-slate-200'}`}>
-                        {player.name}
-                        {player.isHuman && <span className="text-xs text-slate-500 ml-2">(You)</span>}
+                        {playerLabel(player)}
+                        {player.isHuman && <span className="text-xs text-slate-500 ml-2">{t("(You)")}</span>}
                       </h3>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="text-slate-400">
-                          Cash: <span className="text-emerald-400 font-mono">${player.cash.toLocaleString()}</span>
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <span className="text-slate-400">{t("Cash:")}<span className="text-emerald-400 font-mono">${number(player.cash)}</span>
                         </span>
                         {isSpecialHand && (
-                          <span className="text-emerald-400 font-bold animate-pulse">✨ {specialHandType?.toUpperCase()} - SPECIAL HAND!</span>
+                          <span className="text-emerald-400 font-bold animate-pulse">✨ {specialHandType}{' '}{t("- SPECIAL HAND!")}</span>
                         )}
                         {isFoul && (
-                          <span className="text-rose-400 font-medium">FOUL</span>
+                          <span className="text-rose-400 font-medium">{t("FOUL")}</span>
                         )}
                         {player.isBankrupt && (
-                          <span className="text-rose-400 font-medium">BANKRUPT</span>
+                          <span className="text-rose-400 font-medium">{t("BANKRUPT")}</span>
                         )}
                       </div>
                     </div>
@@ -175,8 +178,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
                       {score.cashChange > 0 ? '+' : ''}{score.cashChange}
                     </div>
                     <div className="text-xs text-slate-500">
-                      {score.totalPoints > 0 ? '+' : ''}{score.totalPoints} pts
-                    </div>
+                      {score.totalPoints > 0 ? '+' : ''}{score.totalPoints} {t("pts")}</div>
                   </div>
                 </div>
 
@@ -204,8 +206,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
                                 : 'bg-slate-700/30 text-slate-400'
                             }
                           `}
-                        >
-                          vs {opponent.name}: {points > 0 ? '+' : ''}{points}
+                        >{t("vs")} {playerLabel(opponent)}: {points > 0 ? '+' : ''}{points}
                         </div>
                       );
                     })}
@@ -227,9 +228,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
               transition-all duration-200
               hover:bg-slate-700 hover:border-amber-400/50
             "
-          >
-            Flag My Hand (Report AI Issue)
-          </button>
+          >{t("Flag My Hand (Report AI Issue)")}</button>
         )}
 
         {/* Continue Button */}
@@ -246,7 +245,7 @@ export default function ScoreDisplay({ players, roundScores, onContinue, isGameO
             hover:-translate-y-0.5
           "
         >
-          {isGameOver ? 'Return to Lobby' : 'Next Round'}
+          {isGameOver ? t("Return to Lobby") : t("Next Round")}
         </button>
       </div>
 

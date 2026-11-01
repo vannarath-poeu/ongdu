@@ -1,5 +1,8 @@
 'use client';
 
+import { errorMessages, type UIErrorCode } from '@/lib/i18n/errors';
+import { useLocale } from '@/lib/i18n/context';
+
 import { useState, useEffect } from 'react';
 import { Card as CardType, PlayerArrangement, Player, RoundScore, AIDifficulty } from '@/lib/types';
 import { createEmptyArrangement, validateArrangement, evaluateHand } from '@/lib/game-logic';
@@ -28,12 +31,15 @@ export default function FeedbackModal({
   roundNumber,
   aiDifficulty,
 }: FeedbackModalProps) {
+  const { t, handLabel, message } = useLocale();
   const [aiSuggestion, setAiSuggestion] = useState<PlayerArrangement | null>(null);
   const [userCorrection, setUserCorrection] = useState<PlayerArrangement>(createEmptyArrangement());
   const [unplacedCards, setUnplacedCards] = useState<CardType[]>([]);
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<UIErrorCode>('FEEDBACK_FAILED');
+  const [aiFailed, setAiFailed] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const { getArrangement } = useAIWorker();
@@ -47,6 +53,7 @@ export default function FeedbackModal({
 
     const calculateAI = async () => {
       setIsCalculating(true);
+      setAiFailed(false);
       try {
         const suggestion = await getArrangement(cards, {
           difficulty: aiDifficulty,
@@ -58,6 +65,7 @@ export default function FeedbackModal({
         setAiSuggestion(suggestion);
       } catch (error) {
         console.error('Failed to calculate AI suggestion:', error);
+        setAiFailed(true);
       } finally {
         setIsCalculating(false);
       }
@@ -138,7 +146,10 @@ export default function FeedbackModal({
       round_scores: roundScores,
     };
 
-    const result = await submitFeedback(feedback);
+    let result: Awaited<ReturnType<typeof submitFeedback>>;
+    try { result = await submitFeedback(feedback); }
+    catch (error) { console.error('Feedback submission failed:', error); result = { success: false, errorCode: 'FEEDBACK_FAILED' }; }
+    setSubmitError(result.errorCode ?? 'FEEDBACK_FAILED');
 
     setIsSubmitting(false);
     setSubmitStatus(result.success ? 'success' : 'error');
@@ -151,16 +162,14 @@ export default function FeedbackModal({
   const renderArrangement = (arrangement: PlayerArrangement | null, label: string) => {
     if (!arrangement) {
       return (
-        <div className="flex items-center justify-center h-48 text-slate-500">
-          Calculating...
-        </div>
+        <div className="flex items-center justify-center h-48 text-slate-500">{t("Calculating...")}</div>
       );
     }
 
     const layers: Array<{ key: LayerName; label: string }> = [
-      { key: 'top', label: 'Top' },
-      { key: 'middle', label: 'Mid' },
-      { key: 'bottom', label: 'Bot' },
+      { key: 'top', label: t("Top") },
+      { key: 'middle', label: t("Mid") },
+      { key: 'bottom', label: t("Bot") },
     ];
 
     return (
@@ -171,15 +180,15 @@ export default function FeedbackModal({
           const evaluation = layerCards.length === 3 ? evaluateHand(layerCards) : null;
 
           return (
-            <div key={key} className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 w-8">{layerLabel}</span>
+            <div key={key} className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-slate-500 min-w-12">{layerLabel}</span>
               <div className="flex gap-1">
                 {arrangement[key].cards.map((card, idx) => (
                   <Card key={`${key}-${idx}`} card={card} size="sm" />
                 ))}
               </div>
               {evaluation && (
-                <span className="text-xs text-slate-400 ml-1">{evaluation.description}</span>
+                <span className="text-xs text-slate-400 ml-1">{handLabel(evaluation, layerCards)}</span>
               )}
             </div>
           );
@@ -190,21 +199,21 @@ export default function FeedbackModal({
 
   const renderCorrectionArea = () => {
     const layers: Array<{ key: LayerName; label: string }> = [
-      { key: 'top', label: 'Top' },
-      { key: 'middle', label: 'Mid' },
-      { key: 'bottom', label: 'Bot' },
+      { key: 'top', label: t("Top") },
+      { key: 'middle', label: t("Mid") },
+      { key: 'bottom', label: t("Bot") },
     ];
 
     return (
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-slate-400">Your Correction</h4>
+        <h4 className="text-sm font-medium text-slate-400">{t("Your Correction")}</h4>
         {layers.map(({ key, label }) => {
           const layerCards = userCorrection[key].cards.filter(c => c !== null) as CardType[];
           const evaluation = layerCards.length === 3 ? evaluateHand(layerCards) : null;
 
           return (
-            <div key={key} className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 w-8">{label}</span>
+            <div key={key} className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-slate-500 min-w-12">{label}</span>
               <div className="flex gap-1">
                 {userCorrection[key].cards.map((card, idx) => (
                   <div
@@ -217,7 +226,7 @@ export default function FeedbackModal({
                 ))}
               </div>
               {evaluation && (
-                <span className="text-xs text-slate-400 ml-1">{evaluation.description}</span>
+                <span className="text-xs text-slate-400 ml-1">{handLabel(evaluation, layerCards)}</span>
               )}
             </div>
           );
@@ -237,9 +246,10 @@ export default function FeedbackModal({
       <div className="relative bg-slate-900 rounded-xl border border-slate-700 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-slate-200">Flag AI Decision</h3>
+          <h3 className="text-xl font-bold text-slate-200">{t("Flag AI Decision")}</h3>
           <button
             onClick={onClose}
+            aria-label={t("Close")}
             className="text-slate-400 hover:text-slate-200 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -250,7 +260,7 @@ export default function FeedbackModal({
 
         {/* Cards display */}
         <div className="mb-6">
-          <h4 className="text-sm font-medium text-slate-400 mb-2">Your 9 Cards</h4>
+          <h4 className="text-sm font-medium text-slate-400 mb-2">{t("Your 9 Cards")}</h4>
           <div className="flex flex-wrap gap-1 justify-center">
             {cards.map(card => (
               <Card key={card.id} card={card} size="sm" />
@@ -259,7 +269,7 @@ export default function FeedbackModal({
         </div>
 
         {/* Side by side comparison */}
-        <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
           {/* AI Suggestion */}
           <div className="bg-slate-800/50 rounded-lg p-4">
             {isCalculating ? (
@@ -267,7 +277,7 @@ export default function FeedbackModal({
                 <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              renderArrangement(aiSuggestion, 'AI Suggestion')
+              aiFailed ? <p role="alert" className="text-sm text-rose-300">{message(errorMessages.ANALYSIS_FAILED)}</p> : renderArrangement(aiSuggestion, t("AI Suggestion"))
             )}
           </div>
 
@@ -280,11 +290,11 @@ export default function FeedbackModal({
         {/* Unplaced cards for correction */}
         <div className="mb-6 bg-slate-800/30 rounded-lg p-4">
           <h4 className="text-sm font-medium text-slate-400 mb-2">
-            Click cards to place ({unplacedCards.length} remaining)
+            {t('placeRemaining', { count: unplacedCards.length })}
           </h4>
           <div className="flex flex-wrap gap-1 justify-center min-h-[60px]">
             {unplacedCards.length === 0 ? (
-              <p className="text-slate-500 text-sm self-center">All cards placed!</p>
+              <p className="text-slate-500 text-sm self-center">{t("All cards placed!")}</p>
             ) : (
               unplacedCards.map(card => (
                 <div
@@ -301,21 +311,15 @@ export default function FeedbackModal({
 
         {/* Validation warning */}
         {isComplete && !isValid && (
-          <div className="mb-4 bg-rose-900/30 border border-rose-700/50 rounded-lg p-3 text-rose-300 text-sm">
-            Invalid arrangement! Top must be weakest, bottom must be strongest.
-          </div>
+          <div className="mb-4 bg-rose-900/30 border border-rose-700/50 rounded-lg p-3 text-rose-300 text-sm">{t("Invalid arrangement! Top must be weakest, bottom must be strongest.")}</div>
         )}
 
         {/* Submit status */}
         {submitStatus === 'success' && (
-          <div className="mb-4 bg-emerald-900/30 border border-emerald-700/50 rounded-lg p-3 text-emerald-300 text-sm">
-            Feedback submitted successfully! Thank you for helping improve the AI.
-          </div>
+          <div className="mb-4 bg-emerald-900/30 border border-emerald-700/50 rounded-lg p-3 text-emerald-300 text-sm">{t("Feedback submitted successfully! Thank you for helping improve the AI.")}</div>
         )}
         {submitStatus === 'error' && (
-          <div className="mb-4 bg-rose-900/30 border border-rose-700/50 rounded-lg p-3 text-rose-300 text-sm">
-            Failed to submit feedback. Please try again.
-          </div>
+          <div className="mb-4 bg-rose-900/30 border border-rose-700/50 rounded-lg p-3 text-rose-300 text-sm">{message(errorMessages[submitError])}</div>
         )}
 
         {/* Submit button */}
@@ -331,7 +335,7 @@ export default function FeedbackModal({
             }
           `}
         >
-          {isSubmitting ? 'Submitting...' : submitStatus === 'success' ? 'Submitted!' : 'Submit Feedback'}
+          {isSubmitting ? t("Submitting...") : submitStatus === 'success' ? t("Submitted!") : t("Submit Feedback")}
         </button>
       </div>
     </div>

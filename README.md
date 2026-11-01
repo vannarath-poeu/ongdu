@@ -42,6 +42,20 @@ npm start
 
 Open [http://localhost:3000](http://localhost:3000) to play!
 
+## Languages
+
+Khmer is the default throughout the game, card helper, camera review, and feedback.
+Use **ខ្មែរ | English** in any screen header to switch instantly. The choice is
+saved on this browser; switching during play keeps the current hand and analysis.
+Card notation, digits (0–9), and the existing $ game currency stay unchanged.
+
+Translations and the shared card-game glossary live in `lib/i18n/messages.ts`.
+Use `useLocale()` for UI copy and domain labels, and store message descriptors
+or error codes for text that outlives a render. Keep locale out of game state
+and worker inputs. Both dictionaries must have matching keys and placeholders.
+Run `npm run test:i18n` to check the translation contract and domain formatting.
+Khmer terminology is a draft and should receive fluent-speaker review before release.
+
 ## 🎯 How to Play
 
 1. **Lobby**: Choose the number of players (2-6), difficulty, and estimated game length
@@ -56,7 +70,7 @@ Open [http://localhost:3000](http://localhost:3000) to play!
 - **Framework**: Next.js 16.1.1
 - **UI**: React 19 + Tailwind CSS 4
 - **Language**: TypeScript
-- **Fonts**: Outfit, JetBrains Mono
+- **Fonts**: Noto Sans Khmer, Outfit, JetBrains Mono
 
 ## 📁 Project Structure
 

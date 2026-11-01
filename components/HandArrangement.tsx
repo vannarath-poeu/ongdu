@@ -1,5 +1,7 @@
 'use client';
 
+import { useLocale } from '@/lib/i18n/context';
+
 import { useState, useEffect, useCallback } from 'react';
 import { Card as CardType, PlayerArrangement, Layer } from '@/lib/types';
 import { createEmptyArrangement, isArrangementComplete, validateArrangement, evaluateHand } from '@/lib/game-logic';
@@ -16,10 +18,12 @@ interface HandArrangementProps {
 type LayerName = 'top' | 'middle' | 'bottom';
 
 export default function HandArrangement({ hand, onConfirm, onArrangementChange, numOpponents = 3 }: HandArrangementProps) {
+  const { t, handLabel } = useLocale();
   const [arrangement, setArrangement] = useState<PlayerArrangement>(createEmptyArrangement);
   const [unplacedCards, setUnplacedCards] = useState<CardType[]>(hand);
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<{ layer: LayerName; index: number } | null>(null);
+  const [analysisFailed, setAnalysisFailed] = useState(false);
   const [isCalculatingBest, setIsCalculatingBest] = useState(false);
 
   // Use Web Worker for off-main-thread calculation
@@ -143,6 +147,7 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
     if (isCalculatingBest) return;
 
     setIsCalculatingBest(true);
+    setAnalysisFailed(false);
 
     try {
       // Use Web Worker for off-main-thread EV calculation
@@ -163,6 +168,7 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
       }
     } catch (error) {
       console.error('Failed to calculate best hand:', error);
+      setAnalysisFailed(true);
     } finally {
       setIsCalculatingBest(false);
     }
@@ -180,7 +186,7 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
 
     return (
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
               {label}
@@ -193,7 +199,7 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
               layer === 'middle' ? 'bg-blue-900/50 text-blue-400' :
               'bg-slate-700/50 text-slate-400'
             }`}>
-              {evaluation.description}
+              {handLabel(evaluation, layerData.cards)}
             </span>
           )}
         </div>
@@ -215,15 +221,15 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
   return (
     <div className="space-y-6">
       {/* Arrangement Area */}
-      <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 space-y-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-200">Your Arrangement</h3>
+      <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-3 sm:p-6 border border-slate-700/50 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h3 className="text-lg font-semibold text-slate-200">{t("Your Arrangement")}</h3>
           <div className="flex items-center gap-3">
             <button
               onClick={autoBestHand}
               disabled={isCalculatingBest}
               className={`text-xs px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30 hover:from-amber-500/30 hover:to-orange-500/30 hover:border-amber-400/50 transition-all duration-200 flex items-center gap-1.5 ${isCalculatingBest ? 'opacity-70 cursor-wait' : ''}`}
-              title="Auto-arrange cards using EV-optimized strategy"
+              title={t("Auto-arrange cards using EV-optimized strategy")}
             >
               {isCalculatingBest ? (
                 <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
@@ -232,39 +238,36 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
                 </svg>
               )}
-              {isCalculatingBest ? 'Calculating...' : 'Best Hand'}
+              {isCalculatingBest ? t("Calculating...") : t("Best Hand")}
             </button>
             <button
               onClick={clearAll}
               className="text-xs text-slate-400 hover:text-slate-300 transition-colors"
-            >
-              Clear All
-            </button>
+            >{t("Clear All")}</button>
           </div>
         </div>
 
         <div className="space-y-4">
-          {renderLayer('top', 'Top Layer', 'weakest')}
-          {renderLayer('middle', 'Middle Layer', 'medium')}
-          {renderLayer('bottom', 'Bottom Layer', 'strongest')}
+          {renderLayer('top', t("Top Layer"), t("weakest"))}
+          {renderLayer('middle', t("Middle Layer"), t('Medium'))}
+          {renderLayer('bottom', t("Bottom Layer"), t("strongest"))}
         </div>
 
+        {analysisFailed && <p role="alert" className="text-sm text-rose-300">{t("error.analysis")}</p>}
         {/* Validation Warning */}
         {isComplete && !isValid && (
-          <div className="bg-rose-900/30 border border-rose-700/50 rounded-lg p-3 text-rose-300 text-sm">
-            ⚠️ Invalid arrangement! Top layer cannot be stronger than middle, and middle cannot be stronger than bottom.
-          </div>
+          <div className="bg-rose-900/30 border border-rose-700/50 rounded-lg p-3 text-rose-300 text-sm">{t("⚠️ Invalid arrangement! Top layer cannot be stronger than middle, and middle cannot be stronger than bottom.")}</div>
         )}
       </div>
 
       {/* Unplaced Cards */}
-      <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+      <div className="bg-slate-800/30 backdrop-blur-sm rounded-xl p-3 sm:p-6 border border-slate-700/50">
         <h3 className="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider">
-          Your Cards ({unplacedCards.length} remaining)
+          {t('remaining', { count: unplacedCards.length })}
         </h3>
         <div className="flex flex-wrap gap-2 justify-center min-h-[120px]">
           {unplacedCards.length === 0 ? (
-            <p className="text-slate-500 text-sm self-center">All cards placed!</p>
+            <p className="text-slate-500 text-sm self-center">{t("All cards placed!")}</p>
           ) : (
             unplacedCards.map((card) => (
               <Card
@@ -281,8 +284,8 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
 
       {/* Instructions */}
       <div className="text-center text-sm text-slate-500 space-y-1">
-        <p>Click a card, then click a slot to place it</p>
-        <p>Click a placed card to return it to your hand</p>
+        <p>{t("Click a card, then click a slot to place it")}</p>
+        <p>{t("Click a placed card to return it to your hand")}</p>
       </div>
 
       {/* Confirm Button */}
@@ -298,7 +301,7 @@ export default function HandArrangement({ hand, onConfirm, onArrangementChange, 
           }
         `}
       >
-        {!isComplete ? 'Place All Cards to Continue' : !isValid ? 'Fix Invalid Arrangement' : 'Ready!'}
+        {!isComplete ? t("Place All Cards to Continue") : !isValid ? t("Fix Invalid Arrangement") : t("confirmArrangement")}
       </button>
     </div>
   );

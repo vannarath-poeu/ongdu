@@ -197,3 +197,27 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Khmer needs room for stacked vowels and natural word spacing. Card faces keep
+   their established dimensions and Latin typography. */
+html:lang(km) body {
+  font-family: var(--font-khmer), var(--font-outfit), sans-serif;
+  line-height: 1.8;
+}
+html:lang(km) :is(.uppercase, .capitalize) { text-transform: none; }
+html:lang(km) :is([class*="tracking-"]) { letter-spacing: normal; }
+html:lang(km) :is(.text-xs, .text-\[11px\], .text-\[10px\], .text-\[9px\]):not(.card-face) {
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+html:lang(km) .text-sm:not(.card-face) { font-size: 1rem; line-height: 1.8; }
+html:lang(km) :is(button, label, h1, h2, h3, h4, p) { overflow-wrap: anywhere; }
+html:lang(km) button { min-height: 44px; }
+html:lang(km) .card-face, html:lang(km) .brand-wordmark {
+  font-family: var(--font-outfit), sans-serif;
+  line-height: normal;
+}
+html:lang(km) .card-face :is(.text-xs, .text-sm) { font-size: inherit; line-height: inherit; }
+
+html:lang(km) .font-mono { font-family: var(--font-mono), var(--font-khmer), monospace; }
+html:lang(km) .photo-region { min-height: 0; }

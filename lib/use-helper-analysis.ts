@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import { UIError } from './i18n/errors';
 import type { Card } from './types';
 import type { EVRankedArrangement } from './expected-value';
 import type { HelperAnalysisRequest, HelperAnalysisResponse } from './helper-analysis.worker';
@@ -26,10 +27,10 @@ export function useHelperAnalysis() {
       worker.onmessage = ({ data }: MessageEvent<HelperAnalysisResponse>) => {
         if (data.id !== id || id !== requestId.current) return;
         finish();
-        if (data.error) reject(new Error(data.error)); else resolve(data.results ?? []);
+        if (data.errorCode || data.error) reject(new UIError(data.errorCode ?? 'ANALYSIS_FAILED', { cause: data.error })); else resolve(data.results ?? []);
       };
-      worker.onerror = () => { finish(); reject(new Error('We couldn’t finish arranging your cards. Please try again.')); };
-      worker.onmessageerror = () => { finish(); reject(new Error('We couldn’t read the arrangement. Please try again.')); };
+      worker.onerror = () => { finish(); reject(new UIError('ANALYSIS_FAILED')); };
+      worker.onmessageerror = () => { finish(); reject(new UIError('ANALYSIS_FAILED')); };
       try { worker.postMessage({ id, cards, opponents } satisfies HelperAnalysisRequest); }
       catch (error) { finish(); reject(error instanceof Error ? error : new Error('Could not start analysis.')); }
     });
