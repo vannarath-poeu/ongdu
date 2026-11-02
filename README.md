@@ -121,6 +121,8 @@ frozen epoch-30 YOLO26n model through ONNX Runtime Web in a browser worker. Mode
 and runtime assets are served from the app's origin; photos stay on the device.
 WebGPU is attempted when available, with a clean-worker WASM fallback.
 
+Uploads are resized locally to at most 1,600 pixels on their longest edge before preview and recognition. JPEG/PNG metadata enables decoder-side resizing with EXIF orientation; unsupported bitmap decoding falls back to the browser image decoder. The source pixel limit is 220 megapixels and the encoded-file limit is 64 MiB. HEIC/HEIF works only when the browser can decode it; otherwise the helper asks for JPEG/PNG. Preparation can be cancelled or replaced by another upload.
+
 The model recognizes 52 ordinary card identities from visible corners. Matching
 rank-and-suit detections are merged into one card for Ongdu's single deck, using
 the strongest corner as the preview. Conflicting readings stay flagged for review.
@@ -217,3 +219,11 @@ ONGDU_CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 The browser check covers real WASM inference, 20 scan/reset cycles, 9/10-card editing and arrangement handoff, cancellation, corrupt model rejection, GPU fallback and same-origin-only requests. Reports default to the ignored `models/card-recognition/reports/epoch30-browser/` directory. Desktop Chrome verification does not establish actual GPU execution, mobile performance or independent hand accuracy.
 
 The epoch-30 model was selected by validation scores before the final 1,010-image test evaluation. At fixed 640px input, test box precision is 99.88%, recall 99.97%, mAP50 99.50%, and mAP50–95 57.54%. The training log reported 84.87% validation mAP50–95 with rectangular padding; fixed-640 validation rechecking measured 57.44%. These are different preprocessing conditions. The packaged `test-evaluation.json` records deployment-shape results; no test-set-driven tuning was applied.
+
+Camera capture requests a 1920×1440 rear-camera feed when available and shows the
+whole frame. Captures and uploads keep their aspect ratio and are capped at a
+1600px longest edge before recognition, using high-quality resizing and asynchronous
+JPEG encoding. The worker then letterboxes to the model's fixed 640×640 input.
+JPEG EXIF orientation is applied by the browser decoder. Formats without readable
+headers use native decoding before the canvas limit; mobile camera quality and
+format support still need physical-device checks.

@@ -1,6 +1,9 @@
 import { msg, type Message } from './core';
 
 export const errorMessages = {
+  PHOTO_TOO_LARGE: msg('photo.large'),
+  PHOTO_DECODE: msg('photo.decode'),
+  PHOTO_PREPARE_TIMEOUT: msg('photo.prepareTimeout'),
   SCANNER_ASSET: msg('scanner.asset'),
   SCANNER_TIMEOUT: msg('scanner.timeout'),
   SCANNER_RUNTIME: msg('scanner.runtime'),

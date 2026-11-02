@@ -50,7 +50,7 @@ export default function CardPhotoRecognition({ source, onUseCards, onImageError,
     } catch (scanError) {
       if (!controller.signal.aborted) {
         const code = scanError instanceof Error && 'code' in scanError ? scanError.code : undefined;
-        setError(code === 'ASSET' ? 'SCANNER_ASSET' : code === 'TIMEOUT' ? 'SCANNER_TIMEOUT' : code === 'RUNTIME' ? 'SCANNER_RUNTIME' : 'PHOTO_READ');
+        setError(code === 'PHOTO_TOO_LARGE' || code === 'PHOTO_DECODE' || code === 'PHOTO_PREPARE_TIMEOUT' ? code : code === 'ASSET' ? 'SCANNER_ASSET' : code === 'TIMEOUT' ? 'SCANNER_TIMEOUT' : code === 'RUNTIME' ? 'SCANNER_RUNTIME' : 'PHOTO_READ');
       }
     } finally {
       clearTimeout(timeout);

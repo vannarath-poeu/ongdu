@@ -1,5 +1,8 @@
 // Shared product glossary. Keep card notation and game values language-neutral.
 export const en = {
+  "photo.large": "This photo is too large to process on this device. Choose a smaller photo or enter cards manually.",
+  "photo.decode": "This photo format could not be read. Choose a JPEG or PNG, or save the photo as JPEG and try again.",
+  "photo.prepareTimeout": "Preparing this photo took too long. Choose a smaller photo and try again.",
   "scanner.experimental": "Experimental card reader. Matching corners are combined into one card. Check every card.",
   "scanner.asset": "The card reader could not be loaded. Check your connection and try again, or enter cards manually.",
   "scanner.timeout": "Reading this photo took too long. Try a smaller, clearer photo or enter cards manually.",
@@ -299,6 +302,9 @@ export const en = {
 
 export type MessageKey = keyof typeof en;
 export const km: Record<MessageKey, string> = {
+  "photo.large": "រូបថតនេះធំពេកសម្រាប់ដំណើរការលើឧបករណ៍នេះ។ សូមជ្រើសរូបថតតូចជាងនេះ ឬបញ្ចូលបៀដោយដៃ។",
+  "photo.decode": "មិនអាចអានទ្រង់ទ្រាយរូបថតនេះបានទេ។ សូមជ្រើស JPEG ឬ PNG ឬរក្សាទុករូបថតជា JPEG រួចសាកម្ដងទៀត។",
+  "photo.prepareTimeout": "ការរៀបចំរូបថតនេះចំណាយពេលយូរពេក។ សូមជ្រើសរូបថតតូចជាងនេះ ហើយសាកម្ដងទៀត។",
   "scanner.experimental": "មុខងារអានបៀសាកល្បង។ ជ្រុងបៀដូចគ្នាត្រូវបានបញ្ចូលជាបៀតែមួយ។ សូមពិនិត្យបៀគ្រប់សន្លឹក។",
   "scanner.asset": "មិនអាចផ្ទុកមុខងារអានបៀបានទេ។ សូមពិនិត្យការតភ្ជាប់ ហើយសាកម្ដងទៀត ឬបញ្ចូលបៀដោយដៃ។",
   "scanner.timeout": "ការអានរូបថតនេះចំណាយពេលយូរពេក។ សូមសាករូបថតតូច និងច្បាស់ជាងនេះ ឬបញ្ចូលបៀដោយដៃ។",

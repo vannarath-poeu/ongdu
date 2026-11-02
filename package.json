@@ -12,10 +12,11 @@
     "model:inspect": "python3 scripts/card-recognition/inspect_checkpoint.py",
     "test:i18n": "node --test tests/i18n.test.mjs",
     "model:prepare-runtime": "node scripts/card-recognition/prepare-runtime.mjs",
-    "test:yolo26": "node --test tests/yolo26-scanner.test.mjs",
+    "test:yolo26": "node --test tests/yolo26-scanner.test.mjs tests/photo-preparation.test.mjs",
     "prebuild": "npm run model:prepare-runtime",
     "test:yolo26:browser": "node scripts/card-recognition/browser-smoke.mjs",
-    "predev": "npm run model:prepare-runtime"
+    "predev": "npm run model:prepare-runtime",
+    "test:photos:browser": "node scripts/card-recognition/photo-browser-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.93.1",

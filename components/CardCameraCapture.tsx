@@ -6,8 +6,9 @@ import { useLocale } from '@/lib/i18n/context';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Card } from '@/lib/types';
 import CardPhotoRecognition from '@/components/CardPhotoRecognition';
+import { preparePhotoUpload, encodePhotoCanvas, photoDimensions, PhotoPreparationError } from '@/lib/card-detector/photo';
 
-type CameraState = 'idle' | 'opening' | 'streaming' | 'captured' | 'error';
+type CameraState = 'idle' | 'opening' | 'streaming' | 'preparing' | 'captured' | 'error';
 
 function getCameraError(error: unknown): UIErrorCode {
   if (error instanceof DOMException) {
@@ -39,12 +40,15 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const cameraRequestRef = useRef(0);
+  const photoPreparationRef = useRef<AbortController | null>(null);
   const [cameraState, setCameraState] = useState<CameraState>('idle');
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<UIErrorCode | null>(null);
 
   const stopCamera = useCallback(() => {
+    photoPreparationRef.current?.abort();
+    photoPreparationRef.current = null;
     cameraRequestRef.current += 1;
     streamRef.current?.getTracks().forEach(track => track.stop());
     streamRef.current = null;
@@ -60,6 +64,8 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
 
   useEffect(() => {
     if (active) return;
+    photoPreparationRef.current?.abort();
+    photoPreparationRef.current = null;
     cameraRequestRef.current += 1;
     streamRef.current?.getTracks().forEach(track => track.stop());
     streamRef.current = null;
@@ -72,21 +78,33 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
     };
   }, [capturedImage]);
 
-  const uploadPhoto = (file: File | undefined) => {
+  const uploadPhoto = async (file: File | undefined) => {
     if (!file) return;
-
     onActiveChange?.(true);
     stopCamera();
     setCapturedImage(null);
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('PHOTO_TYPE');
-      setCameraState('error');
-      return;
+    if (!file.type.startsWith('image/') && !/\.(jpe?g|png|webp|heic|heif|avif)$/i.test(file.name)) {
+      setErrorMessage('PHOTO_TYPE'); setCameraState('error'); return;
     }
-
-    setCapturedImage(URL.createObjectURL(file));
-    setErrorMessage(null);
-    setCameraState('captured');
+    const controller = new AbortController();
+    photoPreparationRef.current = controller;
+    setErrorMessage(null); setCameraState('preparing');
+    const timeout = setTimeout(() => controller.abort(new PhotoPreparationError('PHOTO_PREPARE_TIMEOUT')), 30_000);
+    try {
+      const photo = await preparePhotoUpload(file, controller.signal);
+      if (controller.signal.aborted || photoPreparationRef.current !== controller) return;
+      setCapturedImage(URL.createObjectURL(photo));
+      setCameraState('captured');
+    } catch (error) {
+      if (photoPreparationRef.current !== controller) return;
+      if (controller.signal.aborted && !(controller.signal.reason instanceof PhotoPreparationError)) return;
+      const reason = controller.signal.aborted ? controller.signal.reason : error;
+      setErrorMessage(reason instanceof PhotoPreparationError ? reason.code : 'PHOTO_DECODE');
+      setCameraState('error');
+    } finally {
+      clearTimeout(timeout);
+      if (photoPreparationRef.current === controller) photoPreparationRef.current = null;
+    }
   };
 
   const uploadControl = (
@@ -98,7 +116,7 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
         aria-label={t("Upload photo from library")}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         onChange={(event) => {
-          uploadPhoto(event.target.files?.[0]);
+          void uploadPhoto(event.target.files?.[0]);
           event.target.value = '';
         }}
       />
@@ -121,7 +139,11 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1440 },
+        },
         audio: false,
       });
 
@@ -143,7 +165,7 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
     }
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     const video = videoRef.current;
     if (!video || !isVideoReady || video.videoWidth === 0 || video.videoHeight === 0) {
       setErrorMessage('CAMERA_LOADING');
@@ -151,8 +173,9 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
     }
 
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const size = photoDimensions(video.videoWidth, video.videoHeight);
+    canvas.width = size.width;
+    canvas.height = size.height;
     const context = canvas.getContext('2d');
 
     if (!context) {
@@ -160,11 +183,29 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
       return;
     }
 
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    setCapturedImage(canvas.toDataURL('image/jpeg', 0.9));
     stopCamera();
+    const controller = new AbortController();
+    photoPreparationRef.current = controller;
     setErrorMessage(null);
-    setCameraState('captured');
+    setCameraState('preparing');
+    const timeout = setTimeout(() => controller.abort(new PhotoPreparationError('PHOTO_PREPARE_TIMEOUT')), 30_000);
+    try {
+      const photo = await encodePhotoCanvas(canvas, controller.signal);
+      if (controller.signal.aborted || photoPreparationRef.current !== controller) return;
+      setCapturedImage(URL.createObjectURL(photo));
+      setCameraState('captured');
+    } catch (error) {
+      if (photoPreparationRef.current !== controller) return;
+      if (controller.signal.aborted && !(controller.signal.reason instanceof PhotoPreparationError)) return;
+      setErrorMessage(error instanceof PhotoPreparationError ? error.code : 'PHOTO_CAPTURE');
+      setCameraState('error');
+    } finally {
+      clearTimeout(timeout);
+      if (photoPreparationRef.current === controller) photoPreparationRef.current = null;
+    }
   };
 
   const clearPhoto = () => {
@@ -206,6 +247,9 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
         >{t("Back")}</button>
       </div>}
 
+      {cameraState === 'preparing' && <div role="status" aria-live="polite" className="rounded-xl bg-slate-950/50 p-6 text-center text-slate-300">{t("Getting your photo ready…")}</div>}
+      {onManualEntry && (cameraState === 'preparing' || cameraState === 'error') && <button type="button" onClick={() => { clearPhoto(); onManualEntry(); }} className="text-sm text-indigo-300 underline">{t("Enter cards instead")}</button>}
+
       {(cameraState === 'opening' || cameraState === 'streaming') && (
         <div className="space-y-3">
           <div className="relative overflow-hidden rounded-lg bg-black aspect-[4/3] border border-slate-700">
@@ -215,7 +259,7 @@ export default function CardCameraCapture({ active = true, onUseCards, onActiveC
               muted
               playsInline
               onCanPlay={() => setIsVideoReady(true)}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               aria-label={t("Camera preview")}
             />
             {(cameraState === 'opening' || !isVideoReady) && (
