@@ -1,0 +1,30 @@
+{
+  "browser": "156.0.8078.76",
+  "checks": [
+    "Default/manual entry does not load model/runtime assets",
+    "Real WASM inference reaches localized review UI",
+    "Repeated corner identities are merged for single-deck review",
+    "20 repeat scans finish with no live recognition workers",
+    "9-card review/edit to arrangement analysis succeeds without a live recognition worker",
+    "10-card review/edit to arrangement analysis succeeds without a live recognition worker",
+    "Start-over cancels downloads without stale cards",
+    "Corrupt model bytes fail before inference with a recoverable error",
+    "Default /helper scanner uses YOLO26 without an opt-in parameter",
+    "Forced GPU initialization failure retries once on WASM in a new worker",
+    "Only same-origin GET assets; no photo/tensor uploads or page errors"
+  ],
+  "verifiedProvider": "wasm",
+  "actualWebgpuExecutionVerified": false,
+  "postprocessRulesVersion": "single-deck-identities-v1",
+  "defaultScannerVerified": true,
+  "pythonBrowserReviewParity": {
+    "images": 1,
+    "rawDetections": 4,
+    "uniqueReviewCards": 3,
+    "maxCoordinateDifferencePixels": 2.288818359375e-05
+  },
+  "limitations": [
+    "Desktop headless Chrome only; named mobile devices and independent hand accuracy remain unverified.",
+    "Worker count checks do not establish a browser memory-allocation trend."
+  ]
+}

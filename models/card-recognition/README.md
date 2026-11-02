@@ -1,7 +1,7 @@
 # Card detector migration artifacts
 
-Implementation status: YOLO26 epoch-4 browser integration and desktop Chrome WASM checks completed. Independent hand accuracy, actual WebGPU execution, mobile-device benchmarks, and production acceptance remain pending.
-The default photo scanner at `/helper` uses the frozen experimental YOLO26 epoch-4 model; its verified graph and manifest are under `public/models/card-recognition/yolo26n-epoch4-d7f58ee5-single-deck-v1/`. Desktop Chrome WASM and GPU-to-WASM fallback are tested; production acceptance, actual WebGPU execution, mobile devices and independent hand accuracy remain open.
+Implementation status: YOLO26 epoch-30 browser integration and desktop Chrome WASM checks completed. Independent hand accuracy, actual WebGPU execution, mobile-device benchmarks, and production acceptance remain pending.
+The default photo scanner at `/helper` uses the frozen experimental YOLO26 epoch-30 model; its verified graph and manifest are under `public/models/card-recognition/yolo26n-epoch30-2c3a1772-single-deck-v1/`. Desktop Chrome WASM and GPU-to-WASM fallback are tested; production acceptance, actual WebGPU execution, mobile devices and independent hand accuracy remain open.
 
 The selected checkpoint is pinned in `source-inspection.json`, including its SHA-256,
 byte length, actual serialized class order and referenced Python globals. The inspection

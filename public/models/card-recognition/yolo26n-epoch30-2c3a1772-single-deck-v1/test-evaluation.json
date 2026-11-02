@@ -1,0 +1,559 @@
+{
+  "schema_version": 1,
+  "checkpoint_sha256": "2c3a177254a8543b2641793b40f2a58adff86b5baa8030cfd53eae9ab3f0ec0b",
+  "dataset_sha256": "2cb959085e0a771223c884a7a2f8aedf404074194b889399b4d23e5a12f921c7",
+  "split": "test",
+  "subset": false,
+  "head": "one-to-many with external NMS",
+  "images_seen": 1010,
+  "results": {
+    "precision": 0.9988312999996963,
+    "recall": 0.9996950204778468,
+    "map50": 0.9949999999999998,
+    "map50_95": 0.5754401840573724,
+    "per_class": [
+      {
+        "class_id": 0,
+        "label": "10C",
+        "metrics": {
+          "precision": 0.9983290568572858,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.574330462710453
+        }
+      },
+      {
+        "class_id": 1,
+        "label": "10D",
+        "metrics": {
+          "precision": 0.998820105341335,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5922804056589884
+        }
+      },
+      {
+        "class_id": 2,
+        "label": "10H",
+        "metrics": {
+          "precision": 0.9979991953819556,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5755298664570724
+        }
+      },
+      {
+        "class_id": 3,
+        "label": "10S",
+        "metrics": {
+          "precision": 0.998913699441142,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5923879098355446
+        }
+      },
+      {
+        "class_id": 4,
+        "label": "2C",
+        "metrics": {
+          "precision": 0.9987989112627756,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5808561408649642
+        }
+      },
+      {
+        "class_id": 5,
+        "label": "2D",
+        "metrics": {
+          "precision": 0.9989972463833481,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5745343563223836
+        }
+      },
+      {
+        "class_id": 6,
+        "label": "2H",
+        "metrics": {
+          "precision": 0.9988392099880975,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5807793523694564
+        }
+      },
+      {
+        "class_id": 7,
+        "label": "2S",
+        "metrics": {
+          "precision": 0.9988655817667115,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5995655082823513
+        }
+      },
+      {
+        "class_id": 8,
+        "label": "3C",
+        "metrics": {
+          "precision": 0.9986092723126606,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5898979588311376
+        }
+      },
+      {
+        "class_id": 9,
+        "label": "3D",
+        "metrics": {
+          "precision": 0.9987163673200964,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.594718572054938
+        }
+      },
+      {
+        "class_id": 10,
+        "label": "3H",
+        "metrics": {
+          "precision": 0.9979415296122914,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5594651741184042
+        }
+      },
+      {
+        "class_id": 11,
+        "label": "3S",
+        "metrics": {
+          "precision": 0.9991105805667753,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5646883283106072
+        }
+      },
+      {
+        "class_id": 12,
+        "label": "4C",
+        "metrics": {
+          "precision": 0.9985640228957683,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5673197020968401
+        }
+      },
+      {
+        "class_id": 13,
+        "label": "4D",
+        "metrics": {
+          "precision": 0.9991764557521535,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5519668564841642
+        }
+      },
+      {
+        "class_id": 14,
+        "label": "4H",
+        "metrics": {
+          "precision": 0.9988905580358719,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5531859957885485
+        }
+      },
+      {
+        "class_id": 15,
+        "label": "4S",
+        "metrics": {
+          "precision": 0.9988731522784428,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5596362452996947
+        }
+      },
+      {
+        "class_id": 16,
+        "label": "5C",
+        "metrics": {
+          "precision": 0.9992238216823268,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.547600804386607
+        }
+      },
+      {
+        "class_id": 17,
+        "label": "5D",
+        "metrics": {
+          "precision": 0.9990277528572215,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5633386218380085
+        }
+      },
+      {
+        "class_id": 18,
+        "label": "5H",
+        "metrics": {
+          "precision": 1.0,
+          "recall": 0.9878851802798503,
+          "map50": 0.995,
+          "map50_95": 0.5740094468890338
+        }
+      },
+      {
+        "class_id": 19,
+        "label": "5S",
+        "metrics": {
+          "precision": 0.9994289438434274,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5537552695147689
+        }
+      },
+      {
+        "class_id": 20,
+        "label": "6C",
+        "metrics": {
+          "precision": 0.9985228180831273,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5691175749916841
+        }
+      },
+      {
+        "class_id": 21,
+        "label": "6D",
+        "metrics": {
+          "precision": 0.9987663306608918,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5873883292934523
+        }
+      },
+      {
+        "class_id": 22,
+        "label": "6H",
+        "metrics": {
+          "precision": 0.9987946424373831,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5723307776111162
+        }
+      },
+      {
+        "class_id": 23,
+        "label": "6S",
+        "metrics": {
+          "precision": 0.998885370174795,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5781714637480444
+        }
+      },
+      {
+        "class_id": 24,
+        "label": "7C",
+        "metrics": {
+          "precision": 0.9988207800960005,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5686961953354047
+        }
+      },
+      {
+        "class_id": 25,
+        "label": "7D",
+        "metrics": {
+          "precision": 0.9992639893734168,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5487370259358539
+        }
+      },
+      {
+        "class_id": 26,
+        "label": "7H",
+        "metrics": {
+          "precision": 0.9986704888340572,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5641941947290201
+        }
+      },
+      {
+        "class_id": 27,
+        "label": "7S",
+        "metrics": {
+          "precision": 0.9996926275138623,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5784813005752558
+        }
+      },
+      {
+        "class_id": 28,
+        "label": "8C",
+        "metrics": {
+          "precision": 0.9981634621235401,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5628706987857949
+        }
+      },
+      {
+        "class_id": 29,
+        "label": "8D",
+        "metrics": {
+          "precision": 0.9987864665910603,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5902755096628729
+        }
+      },
+      {
+        "class_id": 30,
+        "label": "8H",
+        "metrics": {
+          "precision": 0.9986473360304616,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5745562594641107
+        }
+      },
+      {
+        "class_id": 31,
+        "label": "8S",
+        "metrics": {
+          "precision": 0.9984324167005559,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5847638390271206
+        }
+      },
+      {
+        "class_id": 32,
+        "label": "9C",
+        "metrics": {
+          "precision": 0.9985390443411363,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5662864537720538
+        }
+      },
+      {
+        "class_id": 33,
+        "label": "9D",
+        "metrics": {
+          "precision": 0.9984931988247948,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5742329120276634
+        }
+      },
+      {
+        "class_id": 34,
+        "label": "9H",
+        "metrics": {
+          "precision": 0.9984444354517169,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5711407691158837
+        }
+      },
+      {
+        "class_id": 35,
+        "label": "9S",
+        "metrics": {
+          "precision": 0.9991272335894118,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.594542695154785
+        }
+      },
+      {
+        "class_id": 36,
+        "label": "AC",
+        "metrics": {
+          "precision": 0.9991783578622458,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.6044251035373687
+        }
+      },
+      {
+        "class_id": 37,
+        "label": "AD",
+        "metrics": {
+          "precision": 0.9986258816993608,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5778461216308475
+        }
+      },
+      {
+        "class_id": 38,
+        "label": "AH",
+        "metrics": {
+          "precision": 0.9983747255983594,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5745665802958134
+        }
+      },
+      {
+        "class_id": 39,
+        "label": "AS",
+        "metrics": {
+          "precision": 0.9990330669819347,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.6156974551465599
+        }
+      },
+      {
+        "class_id": 40,
+        "label": "JC",
+        "metrics": {
+          "precision": 0.9986944977622482,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5635247452147834
+        }
+      },
+      {
+        "class_id": 41,
+        "label": "JD",
+        "metrics": {
+          "precision": 1.0,
+          "recall": 0.9962558845681819,
+          "map50": 0.995,
+          "map50_95": 0.5707310724079144
+        }
+      },
+      {
+        "class_id": 42,
+        "label": "JH",
+        "metrics": {
+          "precision": 0.9988310512367481,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5929194402727072
+        }
+      },
+      {
+        "class_id": 43,
+        "label": "JS",
+        "metrics": {
+          "precision": 0.9988807929631144,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.562648425071532
+        }
+      },
+      {
+        "class_id": 44,
+        "label": "KC",
+        "metrics": {
+          "precision": 0.9988728408742336,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.6069038786154548
+        }
+      },
+      {
+        "class_id": 45,
+        "label": "KD",
+        "metrics": {
+          "precision": 0.9984608507650081,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.588619728863768
+        }
+      },
+      {
+        "class_id": 46,
+        "label": "KH",
+        "metrics": {
+          "precision": 0.9986954177495111,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.562557719200677
+        }
+      },
+      {
+        "class_id": 47,
+        "label": "KS",
+        "metrics": {
+          "precision": 0.9985631540173723,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5711802900625741
+        }
+      },
+      {
+        "class_id": 48,
+        "label": "QC",
+        "metrics": {
+          "precision": 0.9984644664998702,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5827192585091653
+        }
+      },
+      {
+        "class_id": 49,
+        "label": "QD",
+        "metrics": {
+          "precision": 0.9995821141368745,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5695656593930354
+        }
+      },
+      {
+        "class_id": 50,
+        "label": "QH",
+        "metrics": {
+          "precision": 0.9987616830355363,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5598784779783484
+        }
+      },
+      {
+        "class_id": 51,
+        "label": "QS",
+        "metrics": {
+          "precision": 0.9990325943958815,
+          "recall": 1.0,
+          "map50": 0.995,
+          "map50_95": 0.5834726374387291
+        }
+      }
+    ],
+    "speed_ms_per_image": {
+      "preprocess": 0.29678147821860057,
+      "inference": 4.567160524794137,
+      "loss": 9.051286229301281e-05,
+      "postprocess": 3.8383834148796927
+    }
+  },
+  "limitations": [
+    "Source-box metrics; not physical-card or exact-hand accuracy.",
+    "No joker labels. Model/head/threshold settings were frozen before evaluating the test split.",
+    "Training-log validation used rectangular padding; this report uses the fixed 640px deployment input."
+  ],
+  "evaluationSettings": {
+    "imgsz": 640,
+    "rect": false,
+    "conf": 0.001,
+    "iou": 0.7,
+    "batch": 4,
+    "device": "mps",
+    "head": "raw one-to-many; external NMS",
+    "thresholdSelection": "Frozen before test; AP confidence floor differs from app candidate threshold 0.25"
+  },
+  "sourceReportSha256": "c2e9b2d80ec56bcc7a9d2ad23ce0c9af2d18e454bb63b27a9a35cb92d1e565d8"
+}

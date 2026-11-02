@@ -6,7 +6,7 @@ import {resolve} from 'node:path';
 const image=process.argv[2]||process.env.ONGDU_SCAN_PHOTO;
 if(!image) throw new Error('Supply a local photo: node scripts/card-recognition/browser-smoke.mjs /path/to/cards.jpg');
 const base=process.env.ONGDU_TEST_URL||'http://localhost:3100';
-const directory=resolve(process.env.ONGDU_BROWSER_REPORT||'models/card-recognition/reports/epoch4-browser');
+const directory=resolve(process.env.ONGDU_BROWSER_REPORT||'models/card-recognition/reports/epoch30-browser');
 mkdirSync(directory,{recursive:true});
 const executablePath=process.env.ONGDU_CHROME_PATH||undefined;
 const browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});

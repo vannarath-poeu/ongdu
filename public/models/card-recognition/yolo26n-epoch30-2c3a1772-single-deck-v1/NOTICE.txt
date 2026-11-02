@@ -1,0 +1,6 @@
+Experimental Ongdu YOLO26n epoch-30 snapshot.
+Architecture and initial weights: Ultralytics YOLO26n, AGPL-3.0; preserve LICENSE.txt.
+Initial checkpoint: https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt
+Card dataset: Augmented Startups Playing Cards v4, upstream declared Public Domain.
+https://universe.roboflow.com/augmented-startups/playing-cards-ow27d/dataset/4
+This candidate has not passed production acceptance gates.

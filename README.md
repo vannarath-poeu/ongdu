@@ -117,7 +117,7 @@ The AI uses a brute-force algorithm to find the optimal card arrangement:
 At `/helper`, choose **Upload a photo** or **Take a photo**. The helper starts
 reading the image automatically, then shows a compact hand for review. Manual
 entry is available through **Enter cards instead**. The default scanner uses the
-frozen epoch-4 YOLO26n model through ONNX Runtime Web in a browser worker. Model
+frozen epoch-30 YOLO26n model through ONNX Runtime Web in a browser worker. Model
 and runtime assets are served from the app's origin; photos stay on the device.
 WebGPU is attempted when available, with a clean-worker WASM fallback.
 
@@ -195,11 +195,11 @@ AI and human play still need calibration. The preset values live in `lib/game-se
 
 ## YOLO26 photo scanner setup
 
-Open `/helper` to use the frozen epoch-4 YOLO26 model by default while training continues independently. No scanner query parameter is required. Use `/helper?provider=wasm` to test the portable CPU path. Photos are processed locally in a dedicated browser worker; only same-origin model/runtime assets are fetched.
+Open `/helper` to use the frozen epoch-30 YOLO26 model by default selected after stopping at 31 completed epochs. No scanner query parameter is required. Use `/helper?provider=wasm` to test the portable CPU path. Photos are processed locally in a dedicated browser worker; only same-origin model/runtime assets are fetched.
 
-The epoch-4 FP32 model is checked in under `public/models/card-recognition/yolo26n-epoch4-d7f58ee5-single-deck-v1/`, with its manifest, checkpoint hash, export parity evidence, source notices and license. `npm run model:prepare-runtime` copies ONNX Runtime Web 1.23.2 modules/WASM from installed npm dependencies and checks model bytes; `npm run dev` and `npm run build` run this local step automatically. No model download, export or training runs during builds.
+The epoch-30 FP32 model is checked in under `public/models/card-recognition/yolo26n-epoch30-2c3a1772-single-deck-v1/`, with its manifest, checkpoint hash, export parity evidence, source notices and license. `npm run model:prepare-runtime` copies ONNX Runtime Web 1.23.2 modules/WASM from installed npm dependencies and checks model bytes; `npm run dev` and `npm run build` run this local step automatically. No model download, export or training runs during builds.
 
-This is an experimental integration, not an accepted scanner replacement. The model detects card corners. Because Ongdu uses one ordinary deck, repeated rank-and-suit detections are merged into one review card, keeping the strongest corner and its preview/overlay. Different ranks or suits remain separate; conflicting overlapping identities stay uncertain. Manual wildcards remain independently editable. Review every card and add jokers manually. Independent 9/10-card accuracy and named mobile-device/browser benchmarks remain pending. A new trained checkpoint needs a separate immutable export and manifest update; ongoing training cannot change the loaded epoch-4 model.
+This is an experimental integration, not an accepted scanner replacement. The model detects card corners. Because Ongdu uses one ordinary deck, repeated rank-and-suit detections are merged into one review card, keeping the strongest corner and its preview/overlay. Different ranks or suits remain separate; conflicting overlapping identities stay uncertain. Manual wildcards remain independently editable. Review every card and add jokers manually. Independent 9/10-card accuracy and named mobile-device/browser benchmarks remain pending. A new trained checkpoint needs a separate immutable export and manifest update; future training does not automatically replace the loaded epoch-30 model.
 
 Run `npm run test:yolo26` for decoder/worker lifecycle checks, plus the existing card-contract, recognition, helper-worker and localization tests.
 
@@ -214,4 +214,6 @@ npm start -- --port 3100
 ONGDU_CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run test:yolo26:browser -- /absolute/path/to/cards.jpg
 ```
 
-The browser check covers real WASM inference, 20 scan/reset cycles, 9/10-card editing and arrangement handoff, cancellation, corrupt model rejection, GPU fallback and same-origin-only requests. Reports default to the ignored `models/card-recognition/reports/epoch4-browser/` directory. Desktop Chrome verification does not establish actual GPU execution, mobile performance or independent hand accuracy.
+The browser check covers real WASM inference, 20 scan/reset cycles, 9/10-card editing and arrangement handoff, cancellation, corrupt model rejection, GPU fallback and same-origin-only requests. Reports default to the ignored `models/card-recognition/reports/epoch30-browser/` directory. Desktop Chrome verification does not establish actual GPU execution, mobile performance or independent hand accuracy.
+
+The epoch-30 model was selected by validation scores before the final 1,010-image test evaluation. At fixed 640px input, test box precision is 99.88%, recall 99.97%, mAP50 99.50%, and mAP50–95 57.54%. The training log reported 84.87% validation mAP50–95 with rectangular padding; fixed-640 validation rechecking measured 57.44%. These are different preprocessing conditions. The packaged `test-evaluation.json` records deployment-shape results; no test-set-driven tuning was applied.

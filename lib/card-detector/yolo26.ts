@@ -2,7 +2,7 @@ import { validateModelManifest, type ModelManifest, type CardClass } from './con
 import { inverseBox, letterboxGeometry, type Box } from './geometry.ts';
 
 export const RUNTIME_VERSION = '1.23.2';
-export const MODEL_MANIFEST_URL = '/models/card-recognition/yolo26n-epoch4-d7f58ee5-single-deck-v1/manifest.json';
+export const MODEL_MANIFEST_URL = '/models/card-recognition/yolo26n-epoch30-2c3a1772-single-deck-v1/manifest.json';
 export type Mode = 'raw' | 'nms-free';
 export interface Yolo26Manifest extends ModelManifest {
   architecture: 'yolo26n';

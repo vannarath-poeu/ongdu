@@ -20,8 +20,8 @@ for(const name of files){
 }
 writeFileSync(join(target,'NOTICE.txt'),`ONNX Runtime Web ${version}\nCopyright (c) Microsoft Corporation. All rights reserved.\nLicensed under the MIT License.\nhttps://github.com/microsoft/onnxruntime/blob/v1.23.2/LICENSE\n`);
 writeFileSync(join(target,'assets.json'),JSON.stringify({version,files:inventory},null,2)+'\n');
-const model=join(root,'public/models/card-recognition/yolo26n-epoch4-d7f58ee5-single-deck-v1');
+const model=join(root,'public/models/card-recognition/yolo26n-epoch30-2c3a1772-single-deck-v1');
 const manifest=JSON.parse(readFileSync(join(model,'manifest.json'),'utf8'));
 const bytes=readFileSync(join(model,'detector.onnx'));
 if(bytes.length!==manifest.assets[0].bytes || hash(bytes)!==manifest.assets[0].sha256) throw new Error('Experimental model asset missing or corrupt.');
-console.log(`Verified epoch-4 model and prepared ${files.length} local runtime assets (${version}).`);
+console.log(`Verified epoch-30 model and prepared ${files.length} local runtime assets (${version}).`);

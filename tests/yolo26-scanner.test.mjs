@@ -3,7 +3,7 @@ import test from 'node:test';
 import {readFileSync} from 'node:fs';
 import {decodeYolo26,mergeSingleDeckDetections,prepareTensor,validateYolo26Manifest} from '../lib/card-detector/yolo26.ts';
 import {workerScan} from '../lib/card-detector/lifecycle.ts';
-const manifest=JSON.parse(readFileSync(new URL('../public/models/card-recognition/yolo26n-epoch4-d7f58ee5-single-deck-v1/manifest.json',import.meta.url)));
+const manifest=JSON.parse(readFileSync(new URL('../public/models/card-recognition/yolo26n-epoch30-2c3a1772-single-deck-v1/manifest.json',import.meta.url)));
 
 test('shipped experimental graph contract rejects head/schema mismatches',()=>{
  assert.equal(validateYolo26Manifest(manifest).output.mode,'raw');
